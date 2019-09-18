@@ -63,7 +63,7 @@ def train(loss_func, lr = learning_rate):
   b.assign(0.)
   _loss = tf.Variable([0.]*batch_size)
   for i in range(train_steps):
-    db = dataset.shuffle(train_steps).batch(batch_size)
+    db = dataset.batch(batch_size)
     for idx, (_x, _y) in db.enumerate():
       with tf.GradientTape() as tape:
         yhat = prediction(_x)
@@ -77,6 +77,7 @@ def train(loss_func, lr = learning_rate):
       #update the paramters using Gradient Descent  
       W.assign_sub(dW * lr)
       b.assign_sub(db* lr)
+      print(W)
     
 def plotdata(func_name):
   plt.plot(X, y, 'bo',label='org')
@@ -95,10 +96,10 @@ def savefig(func_name):
   plt.legend()
   plt.savefig(func_name+'.pdf', dpi=600)
 
-train(squared_loss)
-savefig('squared')
+#train(squared_loss)
+#savefig('squared')
 #plotdata('squared')
-#train(huber_loss)
+train(huber_loss)
 #savefig('huber')
 #plotdata('huber')
 #train(hybrid_loss)
