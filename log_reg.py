@@ -10,47 +10,54 @@ tf.enable_eager_execution()
 import time
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
-
+from tensorflow import keras
 import utils
 tf.executing_eagerly()
 # Define paramaters for the model
-learning_rate = None
-batch_size = None
+learning_rate = 0.001
+batch_size = 100
 n_epochs = None
 n_train = None
 n_test = None
 
 # Step 1: Read in data
-fmnist_folder = 'None'
+fashion_mnist = keras.datasets.fashion_mnist
+
+(train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
 #Create dataset load function [Refer fashion mnist github page for util function]
 #Create train,validation,test split
 #train, val, test = utils.read_fmnist(fmnist_folder, flatten=True)
 
 # Step 2: Create datasets and iterator
 # create training Dataset and batch it
-train_data = None
+train_data = train_images.batch(batch_size)
+train_label = train_labels.batch(batch_size)
 
 # create testing Dataset and batch it
-test_data = None
+test_data = test_images.batch(batch_size)
+test_label = test_labels.batch(batch_size)
+
 #############################
 ########## TO DO ############
 #############################
 
 
 # create one iterator and initialize it with different datasets
+'''
 iterator = tf.data.Iterator.from_structure(train_data.output_types, 
                                            train_data.output_shapes)
 img, label = iterator.get_next()
 
 train_init = iterator.make_initializer(train_data)	# initializer for train_data
 test_init = iterator.make_initializer(test_data)	# initializer for train_data
+'''
 
 # Step 3: create weights and bias
 # w is initialized to random variables with mean of 0, stddev of 0.01
 # b is initialized to 0
 # shape of w depends on the dimension of X and Y so that Y = tf.matmul(X, w)
 # shape of b depends on Y
-w, b = None, None
+w, b = tf.Variable(initializer = tf.initializers.RandomUniform(0, 0.01), shape=None), None
 #############################
 ########## TO DO ############
 #############################
@@ -59,7 +66,31 @@ w, b = None, None
 # Step 4: build model
 # the model that returns the logits.
 # this logits will be later passed through softmax layer
-logits = None
+def model(batch_x):
+    """
+    We will define the learned variables, the weights and biases,
+    within the method ``model()`` which also constructs the neural network.
+    The variables named ``hn``, where ``n`` is an integer, hold the learned weight variables. 
+    The variables named ``bn``, where ``n`` is an integer, hold the learned bias variables.
+    """
+ 
+    b1 = tf.get_variable("b1", [config.n_hidden1], initializer = tf.zeros_initializer())
+    h1 = tf.get_variable("h1", [config.n_input, config.n_hidden1],
+                         initializer = tf.contrib.layers.xavier_initializer())
+    layer1 = tf.nn.relu(tf.add(tf.matmul(batch_x,h1),b1))
+ 
+    b2 = tf.get_variable("b2", [config.n_hidden2], initializer = tf.zeros_initializer())
+    h2 = tf.get_variable("h2", [config.n_hidden1, config.n_hidden2],
+                         initializer = tf.contrib.layers.xavier_initializer())
+    layer2 = tf.nn.relu(tf.add(tf.matmul(layer1,h2),b2))
+ 
+    b3 = tf.get_variable("b3", [config.n_class], initializer = tf.zeros_initializer())
+    h3 = tf.get_variable("h3", [config.n_hidden2, config.n_class],
+                         initializer = tf.contrib.layers.xavier_initializer())
+ 
+    layer3 = tf.add(tf.matmul(layer2,h3),b3)
+ 
+    return layer3
 #############################
 ########## TO DO ############
 #############################
@@ -67,7 +98,10 @@ logits = None
 
 # Step 5: define loss function
 # use cross entropy of softmax of logits as the loss function
-loss = None
+def cal_loss(logits, actual):
+    total_loss = tf.nn.softmax_cross_entropy_with_logits_v2(logits = logits,labels = actual)
+    avg_loss = tf.reduce_mean(total_loss)
+    return avg_loss
 #############################
 ########## TO DO ############
 #############################
@@ -75,16 +109,18 @@ loss = None
 
 # Step 6: define optimizer
 # using Adam Optimizer with pre-defined learning rate to minimize loss
-optimizer = None
+optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 #############################
 ########## TO DO ############
 #############################
 
 
 # Step 7: calculate accuracy with test set
-preds = tf.nn.softmax(logits)
-correct_preds = tf.equal(tf.argmax(preds, 1), tf.argmax(label, 1))
-accuracy = tf.reduce_sum(tf.cast(correct_preds, tf.float32))
+def cal_acc(logits, label):
+   preds = tf.nn.softmax(logits)
+   correct_preds = tf.equal(tf.argmax(preds, 1), tf.argmax(label, 1))
+   accuracy = tf.reduce_sum(tf.cast(correct_preds, tf.float32))
+   return accuracy
 
 #Step 8: train the model for n_epochs times
 for i in range(n_epochs):
