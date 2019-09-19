@@ -105,6 +105,9 @@ def saveALL(res):
   for func_name, (a, b), c in zip(fc, res, colors):
     plt.plot(X, X*a+b, c,
            label=func_name + " regression") 
+  plt.legend()
+  plt.savefig(func_name+'.pdf', dpi=600)
+
 res = []
 
 train(squared_loss)
