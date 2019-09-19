@@ -95,24 +95,33 @@ def savefig(func_name):
   plt.legend()
   plt.savefig(func_name+'.pdf', dpi=600)
 
-print(W.numpy())
-print(b.numpy())
+def saveALL(res):
+  plt.rcParams['savefig.dpi'] = 600
+  plt.rcParams['figure.dpi'] = 600
+  plt.clf()
+  plt.plot(X, y, 'rebeccapurple',label='org')
+  fc = ['squared', 'huber', 'bybrid']
+  colors = ["cornflowerblue","lightslategrey","crimson"]
+  for func_name, (a, b), c in zip(fc, res, colors):
+    plt.plot(X, X*a+b, c,
+           label=func_name + " regression") 
+res = []
+
 train(squared_loss)
-savefig('squared')
+#savefig('squared')
 #plotdata('squared')
+res.append([W.numpy(), b.numpy()])
 
-print(W.numpy())
-print(b.numpy())
 train(huber_loss)
-savefig('huber')
+#savefig('huber')
 #plotdata('huber')
+res.append([W.numpy(), b.numpy()])
 
-print(W.numpy())
-print(b.numpy())
 train(hybrid_loss)
-savefig('hybrid')
-print(W.numpy())
-print(b.numpy())
+#savefig('hybrid')
+res.append([W.numpy(), b.numpy()])
 
+print(res)
+saveALL(res)
 
 #train(hybrid_loss, lr = 0.003)
