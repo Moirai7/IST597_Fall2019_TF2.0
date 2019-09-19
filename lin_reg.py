@@ -37,7 +37,7 @@ def prediction(x):
 # Define loss functions of the form: L(y, y_predicted)
 def squared_loss(y, y_predicted):
   #return tf.square(y - y_predicted)
-  return tf.reduce_sum(tf.square(y - y_predicted))
+  return tf.reduce_mean(tf.square(y - y_predicted))
 
 def huber_loss(y, y_predicted, m=1.0):
   """Huber loss."""
