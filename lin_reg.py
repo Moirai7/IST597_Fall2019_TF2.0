@@ -99,7 +99,7 @@ def saveALL(res):
   plt.rcParams['savefig.dpi'] = 600
   plt.rcParams['figure.dpi'] = 600
   plt.clf()
-  plt.plot(X, y, 'rebeccapurple',label='org')
+  plt.plot(X, y, 'bo',label='org')
   fc = ['squared', 'huber', 'bybrid']
   colors = ["cornflowerblue","lightslategrey","crimson"]
   for func_name, (a, b), c in zip(fc, res, colors):
