@@ -50,11 +50,11 @@ def huber_loss(y, y_predicted, m=1.0):
             tf.convert_to_tensor(0.5, dtype=quadratic.dtype),
             tf.multiply(quadratic, quadratic)),
         tf.multiply(m, linear))
-  return losses
-  #return tf.reduce_sum(losses)
+  #return losses
+  return tf.reduce_mean(losses)
 
 def hybrid_loss(y, y_predicted):
-  return huber_loss(y, y_predicted) + tf.abs(y - y_predicted)
+  return huber_loss(y, y_predicted) + tf.reduce_mean(tf.abs(y - y_predicted))
 
 def train(loss_func, lr = learning_rate):
   W.assign(0.)
@@ -95,12 +95,24 @@ def savefig(func_name):
   plt.legend()
   plt.savefig(func_name+'.pdf', dpi=600)
 
+print(W.numpy())
+print(b.numpy())
 train(squared_loss)
 savefig('squared')
 #plotdata('squared')
-#train(huber_loss)
-#savefig('huber')
+
+print(W.numpy())
+print(b.numpy())
+train(huber_loss)
+savefig('huber')
 #plotdata('huber')
-#train(hybrid_loss)
-#savefig('hybrid')
+
+print(W.numpy())
+print(b.numpy())
+train(hybrid_loss)
+savefig('hybrid')
+print(W.numpy())
+print(b.numpy())
+
+
 #train(hybrid_loss, lr = 0.003)
