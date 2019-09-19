@@ -36,8 +36,8 @@ def prediction(x):
 
 # Define loss functions of the form: L(y, y_predicted)
 def squared_loss(y, y_predicted):
-  return tf.square(y - y_predicted)
-  #return tf.reduce_sum(tf.square(y - y_predicted))
+  #return tf.square(y - y_predicted)
+  return tf.reduce_sum(tf.square(y - y_predicted))
 
 def huber_loss(y, y_predicted, m=1.0):
   """Huber loss."""
@@ -59,7 +59,7 @@ def hybrid_loss(y, y_predicted):
 def train(loss_func, lr = learning_rate):
   W.assign(0.)
   b.assign(0.)
-  _loss = tf.Variable([0.]*batch_size)
+  _loss = tf.Variable([0.])
   for i in range(train_steps):
     db = dataset.batch(batch_size)
     for idx, (_x, _y) in db.enumerate():
@@ -67,8 +67,9 @@ def train(loss_func, lr = learning_rate):
         yhat = prediction(_x)
         ###loss
         loss = loss_func(_y, yhat)
-        t = tf.cast(tf.equal(loss, _loss),dtype=tf.float32)
-        lr = learning_rate if tf.argmin(t) == 0 else learning_rate/2
+        lr = learning_rate/2 if loss == _loss else learning_rate
+        #t = tf.cast(tf.equal(loss, _loss),dtype=tf.float32)
+        #lr = learning_rate if tf.argmin(t) == 0 else learning_rate/2
         _loss = loss
 
       dW, db = tape.gradient(loss, [W, b])
