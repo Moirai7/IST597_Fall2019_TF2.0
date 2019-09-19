@@ -1,12 +1,10 @@
 """
-author:-aam35
+author:Lan Zhang
 """
 import time
 
 import tensorflow as tf
 print(tf.__version__)
-#tf.enable_eager_execution()
-#tf.executing_eagerly()
 #import tensorflow.contrib.eager as tfe
 import matplotlib
 matplotlib.use('Agg')
@@ -38,7 +36,7 @@ def prediction(x):
 
 # Define loss functions of the form: L(y, y_predicted)
 def squared_loss(y, y_predicted):
-  return tf.square(y - y_predicted)
+  return (y - y_predicted)**2
   #return tf.reduce_sum(y - y_predicted)
 
 def huber_loss(y, y_predicted, m=1.0):
@@ -99,9 +97,9 @@ def savefig(func_name):
 train(squared_loss)
 savefig('squared')
 #plotdata('squared')
-train(huber_loss)
-savefig('huber')
+#train(huber_loss)
+#savefig('huber')
 #plotdata('huber')
-train(hybrid_loss)
-savefig('hybrid')
+#train(hybrid_loss)
+#savefig('hybrid')
 #train(hybrid_loss, lr = 0.003)
