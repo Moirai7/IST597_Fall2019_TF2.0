@@ -56,7 +56,7 @@ def huber_loss(y, y_predicted, m=1.0):
   #return tf.reduce_sum(losses)
 
 def hybrid_loss(y, y_predicted):
-  return squared_loss(y, y_predicted) + tf.abs(y - y_predicted)
+  return huber_loss(y, y_predicted) + tf.abs(y - y_predicted)
 
 def train(loss_func, lr = learning_rate):
   W.assign(0.)
@@ -69,16 +69,16 @@ def train(loss_func, lr = learning_rate):
         yhat = prediction(_x)
         ###loss
         loss = loss_func(_y, yhat)
-        t = tf.equal(loss, _loss)
-        lr = learning_rate/2 if t[t==False].shape==0 else learning_rate
+        t = tf.cast(tf.equal(loss, _loss),dtype=tf.float32)
+        lr = learning_rate if tf.argmin(t) == 0 else learning_rate/2
         _loss = loss
 
       dW, db = tape.gradient(loss, [W, b])
-      #update the paramters using Gradient Descent  
+      #update the paramters using Gradient Descent
       W.assign_sub(dW * lr)
       b.assign_sub(db* lr)
-      print(W)
-    
+
+#%matplotlib inline
 def plotdata(func_name):
   plt.plot(X, y, 'bo',label='org')
   plt.plot(X, X * W.numpy() + b.numpy(), 'r',
@@ -96,12 +96,12 @@ def savefig(func_name):
   plt.legend()
   plt.savefig(func_name+'.pdf', dpi=600)
 
-#train(squared_loss)
-#savefig('squared')
+train(squared_loss)
+savefig('squared')
 #plotdata('squared')
 train(huber_loss)
-#savefig('huber')
+savefig('huber')
 #plotdata('huber')
-#train(hybrid_loss)
-#savefig('hybrid')
+train(hybrid_loss)
+savefig('hybrid')
 #train(hybrid_loss, lr = 0.003)
