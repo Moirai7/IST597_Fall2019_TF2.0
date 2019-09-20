@@ -9,7 +9,7 @@ print(tf.__version__)
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
+import numpy
 
 # Create data
 NUM_EXAMPLES = 10000
@@ -56,10 +56,11 @@ def huber_loss(y, y_predicted, m=1.0):
 def hybrid_loss(y, y_predicted):
   return huber_loss(y, y_predicted) + tf.reduce_mean(tf.abs(y - y_predicted))
 
-def train(loss_func, lr = learning_rate):
-  W.assign(0.)
-  b.assign(0.)
-  _loss = tf.Variable([0.])
+def train(loss_func, lr = learning_rate, iw = 0., ib = 0.):
+  W.assign(iw)
+  b.assign(ib)
+  check = False
+  start = time.time()
   for i in range(train_steps):
     db = dataset.batch(batch_size)
     for idx, (_x, _y) in db.enumerate():
@@ -67,15 +68,19 @@ def train(loss_func, lr = learning_rate):
         yhat = prediction(_x)
         ###loss
         loss = loss_func(_y, yhat)
-        lr = learning_rate/2 if loss == _loss else learning_rate
-        #t = tf.cast(tf.equal(loss, _loss),dtype=tf.float32)
-        #lr = learning_rate if tf.argmin(t) == 0 else learning_rate/2
+        if check:
+          check = True
+          lr = learning_rate/2 if loss == _loss else learning_rate
+          t = tf.cast(tf.equal(loss, _loss),dtype=tf.float32)
+          lr = learning_rate if tf.argmin(t) == 0 else learning_rate/2
         _loss = loss
 
       dW, db = tape.gradient(loss, [W, b])
       #update the paramters using Gradient Descent
       W.assign_sub(dW * lr)
       b.assign_sub(db* lr)
+  end = time.time()
+  print(end-start)
 
 #%matplotlib inline
 def plotdata(func_name):
@@ -95,21 +100,22 @@ def savefig(func_name):
   plt.legend()
   plt.savefig(func_name+'.pdf', dpi=600)
 
-def saveALL(res):
+def saveALL(res, fc = ['squared', 'huber', 'bybrid']):
   plt.rcParams['savefig.dpi'] = 600
   plt.rcParams['figure.dpi'] = 600
   plt.clf()
   plt.plot(X, y, 'bo',label='org')
-  fc = ['squared', 'huber', 'bybrid']
-  colors = ["cornflowerblue","lightslategrey","crimson"]
+  colors = ["cornflowerblue","lightslategrey","crimson","rebeccapurple","teal","olive","maroon","chocolate","darkseagreen"]
   for func_name, (a, b), c in zip(fc, res, colors):
     plt.plot(X, X*a+b, c,
            label=func_name + " regression") 
   plt.legend()
   plt.savefig(func_name+'.pdf', dpi=600)
 
-res = []
 
+res = []
+## loss
+'''
 train(squared_loss)
 #savefig('squared')
 #plotdata('squared')
@@ -126,5 +132,52 @@ res.append([W.numpy(), b.numpy()])
 
 print(res)
 saveALL(res)
+'''
 
-#train(hybrid_loss, lr = 0.003)
+##lr
+'''
+for i in numpy.arange(0.001,0.01,0.002):
+    train(hybrid_loss, lr = i)
+    res.append([W.numpy(), b.numpy()])
+
+print(res)
+fc = ['learning rate: '+str(round(i,4)) for i in numpy.arange(0.001,0.01,0.002)]
+saveALL(res, fc)
+'''
+
+##epoch
+'''
+for i in range(500,1500,200):
+    train_steps = i
+    train(hybrid_loss)
+    res.append([W.numpy(), b.numpy()])
+
+print(res)
+fc = ['train step: '+str(i) for i in range(500,1500,200)]
+saveALL(res, fc)
+'''
+
+'''
+##initial
+for i in range(-1000,1100,500):
+    train(hybrid_loss, iw = float(i))
+    res.append([W.numpy(), b.numpy()])
+
+print(res)
+fc = ['W: '+str(i) for i in range(-100,110,50)]
+saveALL(res, fc)
+
+res = []
+for i in range(-1000,1100,500):
+    train(hybrid_loss, ib = float(i))
+    res.append([W.numpy(), b.numpy()])
+
+print(res)
+fc = ['b: '+str(i) for i in range(-100,110,50)]
+saveALL(res, fc)
+'''
+
+##duration
+for i in range(700,1500,100):
+    train_steps = i
+    train(hybrid_loss, iw = -1000.)
