@@ -16,9 +16,10 @@ NUM_EXAMPLES = 10000
 
 #define inputs and outputs with some noise 
 X = tf.random.normal([NUM_EXAMPLES], seed=2612)  #inputs 
-#noise = tf.random.normal([NUM_EXAMPLES], seed=2612) #noise 
+#noise = tf.random.uniform([NUM_EXAMPLES], seed=2612) #noise 
 #noise = tf.random.gamma([NUM_EXAMPLES],1, seed=2612) #noise 
-noise = tf.random.normal([NUM_EXAMPLES], seed=2612) #noise 
+#noise = tf.random.normal([NUM_EXAMPLES], seed=2612) #noise 
+noise = tf.random.normal([NUM_EXAMPLES], mean = 0.0, stddev=3.0, seed=2612) #noise 
 y = X * 3 + 2 + noise  #true output
 dataset = tf.data.Dataset.from_tensor_slices((X, y))
 
@@ -176,8 +177,21 @@ print(res)
 fc = ['b: '+str(i) for i in range(-100,110,50)]
 saveALL(res, fc)
 '''
-
+'''
 ##duration
-for i in range(700,1500,100):
+print(X,y)
+for i in range(1000,10000,1000):
     train_steps = i
-    train(hybrid_loss, iw = -1000.)
+    train(huber_loss, iw = -100.)
+    print(X,y)
+    print(W.numpy())
+    res.append([W.numpy(), b.numpy()])
+
+print(res)
+fc = ['epoch: '+str(i) for i in range(1000,10000,1000)]
+saveALL(res, fc)
+'''
+##noise
+train(huber_loss)
+savefig('huber')
+print(W.numpy(), b.numpy())
