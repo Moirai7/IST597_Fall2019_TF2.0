@@ -23,14 +23,22 @@
 
 \section{Problem 1}
 
-Solved on 09/17/2019. The seed I used for noise generation is 2612.
+Solved on 09/17/2019. The seed I used for noise generation is 2612. 
 
 \subsection{Loss Function}
 
 Given an input $x$ with an output $y$, the prediction is $\hat{y}$. The performance of squared loss function shows in Figure\ref{squared_loss_fuc}. 
 
+
 The formulation of squared loss is:
 $$squared\_loss = \frac{1}{N}\sum_0^N{(y_i - \hat{y_i})^2}$$
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[scale=0.4]{imgs/squared.pdf}
+  \caption{Squared loss}
+  \label{squared_loss_fuc}
+\end{figure}
 
 Given the parameter delta = 1.0. The formulation of huber loss is:
 $$huber\_loss = \left\{\begin{matrix}
@@ -45,32 +53,25 @@ $$hybrid\_loss = huber\_loss + |y - \hat{y}|$$
 
 If I didn't use $tf.reduce\_mean$ in squared loss, the result of parameters $W$ and $b$ will turn out to be NaN. I found the issue will happen on tensorflow 2.0. But on tensorflow 1.14, sometimes it can output a correct answer. I'm not sure about the reason. but I think it maybe because something lead to overflow at some point during gradient descent and cause NaNs.
 
-It's hard to tell which loss function works better(see Figure\ref{all_loss}). I've run the code with those two loss function multiple times and both of them work well. If I use the distance of the predicted parameters $W, b$ and original parameters$W, b$ as a measure of the performance, the squared loss(.0133321) work better than huber loss(.0238144).
+It's hard to tell which loss function works better(see Figure\ref{all_loss}). I've run the code with those two loss function multiple times and both of them work well. If I use the distance of the predicted parameters $\hat{W}, \hat{b}$ and original parameters $W, b$ as a measure of the performance($distances = |W-\hat{W}| + |b-\hat{b}|$), the squared loss(.0133321) work better than huber loss(.0238144).
 
 \begin{figure}
   \centering
-  \includegraphics[scale=0.5]{imgs/squared.pdf}
-  \caption{Squared loss}
-  \label{squared_loss_fuc}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \includegraphics[scale=0.5]{imgs/huber.pdf}
+  \includegraphics[scale=0.4]{imgs/huber.pdf}
   \caption{Huber loss}
   \label{huber_loss_fuc}
 \end{figure}
 
 \begin{figure}
   \centering
-  \includegraphics[scale=0.5]{imgs/hybrid.pdf}
+  \includegraphics[scale=0.4]{imgs/hybrid.pdf}
   \caption{Hybrid loss}
   \label{hybrid_loss}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[!h]
   \centering
-  \includegraphics[scale=0.5]{imgs/all.pdf}
+  \includegraphics[scale=0.4]{imgs/all.pdf}
   \caption{Performance of different loss}
   \label{all_loss}
 \end{figure}
@@ -78,7 +79,7 @@ It's hard to tell which loss function works better(see Figure\ref{all_loss}). I'
 
 \subsection{Learning rate}
 
-I implemented patience scheduling. Then I tested learning rate from 0.001 to 0.01 with the incrementation 0.002, Shown in Figure \ref{lr}. The result are quite similar. Table \ref{tab:lr} shows the parameters learned under different learning rate with patience scheduling.
+I implemented patience scheduling. Then I tested learning rate from 0.001 to 0.01 with the incrementation 0.002, Shown in Figure \ref{lr}. Table \ref{tab:lr} shows the parameters learned under different learning rate with patience scheduling. The result are quite similar. All of them approximate to the correct parameters. 
 
 \begin{figure}
   \centering
@@ -105,9 +106,17 @@ I implemented patience scheduling. Then I tested learning rate from 0.001 to 0.0
 \end{table}
 
 \subsection{Training steps}
-I've tested different training steps from 500 to 1500 with the incrementation 200. Shown in Figure \ref{ts}. With longer duration, the performance tend to be better. However, after "enough" steps, this effects start to stabilize and even decrease(see Table \ref{tab:ts}).
+I've tested different training steps from 500 to 1500 with the incrementation 200. Shown in Figure \ref{ts}. With longer duration, the performance tend to be better. However, after "enough" steps, this effects start to stabilize (see Table \ref{tab:ts}).
 
-\begin{table}
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[scale=0.5]{imgs/ts.pdf}
+  \caption{Training steps}
+  \label{ts}
+\end{figure}
+
+\begin{table}[!h]
   \caption{The performance of different training steps}
   \label{tab:ts}
   \centering
@@ -124,19 +133,7 @@ I've tested different training steps from 500 to 1500 with the incrementation 20
   \end{tabular}
 \end{table}
 
-\begin{figure}
-  \centering
-  \includegraphics[scale=0.5]{imgs/ts.pdf}
-  \caption{Training steps}
-  \label{ts}
-\end{figure}
-
-\subsection{Initial Value of parameters}
-Table \ref{tab:w} and Table \ref{tab:b} respectively denote predicted parameters with different initial parameter W and b(both of them are from -1000 to 1000 with the incrementation 500).
-
-If I initialize the parameter W with a small number like -1000 with hybrid Loss, the predicted parameter W will become -984.0698 after 1000 epochs. That is because the model has not yet converged after 1000 epochs. Figure \ref{epoch} is the performance of different traing epoch with the initial parameter $W=-100$. Desipt the predicted parameters after 9000 epochs are far from the correct answer, it is gradually approaching to the correct answer.
-
-\begin{table}
+\begin{table}[!h]
   \caption{The performance of different W after 1000 epochs}
   \label{tab:w}
   \centering
@@ -153,7 +150,7 @@ If I initialize the parameter W with a small number like -1000 with hybrid Loss,
   \end{tabular}
 \end{table}
 
-\begin{table}
+\begin{table}[!h]
   \caption{The performance of different b after 1000 epochs}
   \label{tab:b}
   \centering
@@ -170,7 +167,15 @@ If I initialize the parameter W with a small number like -1000 with hybrid Loss,
   \end{tabular}
 \end{table}
 
-\begin{figure}
+
+\subsection{Initial Value of parameters}
+Table \ref{tab:w} and Table \ref{tab:b} respectively denote predicted parameters with different initial parameter W and b(both of them are from -1000 to 1000 with the incrementation 500).
+
+If I initialize the parameter W with a small number like -1000 with hybrid Loss, the predicted parameter W will become -984.0698 after 1000 epochs. That is because the model has not yet converged after 1000 epochs. Figure \ref{epoch} is the performance of different traing epoch with the initial parameter $W=-100$. Desipt the predicted parameters after 9000 epochs are far from the correct answer, it is gradually approaching to the correct answer.
+
+
+
+\begin{figure}[!h]
   \centering
   \includegraphics[scale=0.5]{imgs/epoch.pdf}
   \caption{Training duration with a large initiail parameter}
@@ -180,7 +185,7 @@ If I initialize the parameter W with a small number like -1000 with hybrid Loss,
 \subsection{Noise in data}
 Before this section, I generated noise in data using normal distribution. Table \ref{noise} shows the results of different noise distribution. The distribution of noise can affect the prediction. Table \ref{normal1} shows the results of normal distribution with different mean. Table \ref{normal2} shows the results of normal distribution with different std. The level of noise is higher, the model is harder to converge.
 
-\begin{table}
+\begin{table}[!h]
   \caption{The performance of different noise in data}
   \label{noise}
   \centering
@@ -195,7 +200,7 @@ Before this section, I generated noise in data using normal distribution. Table 
   \end{tabular}
 \end{table}
 
-\begin{table}
+\begin{table}[!h]
   \caption{The performance of normal distribution with different mean}
   \label{normal1}
   \centering
@@ -211,7 +216,7 @@ Before this section, I generated noise in data using normal distribution. Table 
   \end{tabular}
 \end{table}
 
-\begin{table}
+\begin{table}[!h]
   \caption{The performance of normal distribution with different std}
   \label{normal2}
   \centering
@@ -227,20 +232,47 @@ Before this section, I generated noise in data using normal distribution. Table 
 \end{table}
 
 \subsection{Noise in data during training}
-First, I tested adding noises(normal distribution: $mean = 0.$, $stddev=1.$) in data per epoch. The predicted parameters are $W = 1.4970689$, $1.8999192$.Then, I added noises(normal distribution: $mean = 0.1$, $stddev=0.1$) in weights per epoch. The predicted parameters are $W = -15.267623$, $1.1710013$. Finally, I added noises(normal distribution: $mean = 0.001$, $stddev=0.002$) in learning rate per epoch. The predicted parameters are $W = 2.9953077$, $2.007313$. 
+First, I tested adding noises(normal distribution: $mean = 0.$, $stddev=1.$) in data per epoch. The predicted parameters are $\hat{W }= 1.4970689$, $\hat{b}=1.8999192$.
 
-Noise in data and weight will change the performance of the model. If noise in learnign rate is reseanable, it may affect training time. But it will not change the general performance of the model, except it reaches local minima. For example, it may lead to faster convergence or make the model hard to coverge. 
+Then, I added noises(normal distribution: $mean = 0.1$, $stddev=0.1$) in weights per epoch. The predicted parameters are $\hat{W} = -15.267623$, $\hat{b}=1.1710013$. 
 
-On other classification problems and mathematical models, noise in data and weight will definetly reduce model's performance. But adding small noise in learning rate may make it possible to get rid of local minima.  
+Finally, I added noises(normal distribution: $mean = 0.001$, $stddev=0.002$) in learning rate per epoch. The predicted parameters are $\hat{W} = 2.9953077$, $\hat{b}=2.007313$. 
+
+Noise in data and weight will change the performance of the model. If noise in learning rate is reasonable, it may affect training time. But it will not change the general performance of the model, except it reaches local minima. For example, it may lead to faster convergence or make the model hard to converge. 
+
+On other classification problems and mathematical models, noise in data and weight will also reduce model's performance. But adding small noise in learning rate may make it possible to get rid of local minima.  
 
 \subsection{Significance of seed}
 If I use the same seed to generate noise, I will get the same results every time I run the code without change any parameters. Because the pseudorandom number generating algorithms is designed to performing operation on a seed. So the result of algorithms is determined by the seed. If I want to change the result every time, I can use current time as the seed.
 
-\subsection{Dropout}
-On real world dataset, I'll try to dropout some values because usually the outliers are not 
+%\subsection{Dropout}
+%On real world dataset, I'll try to dropout some values because usually the outliers are not 
+
+\subsection{GPU VS CPU}
+I tested training time with GPU and CPU on Calab. I used each of them to run the same code for 1000 epochs. And the approximate running time per epoch of CPU is 0.030322 and of GPU is 0.073198. 
+
+The training time looks unreasonable. I think it may be because it's not the correct running time considering the network speed and the design of Calab.
+
+\section{Problem 2}
+Solved on 09/21/2019. I implemented two model for fminist. The first one is Vgg16(shown as Figure \ref{vgg}). Another one is multilayer CNNs with batch norm. The accuracy of Vgg16 on test dataset can achieve 92.43\% after 14 epochs. The following reports is based on multilayer CNNs model not Vgg16, because Vgg16 takes for a while per epoch.
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[scale=0.5]{imgs/vgg.pdf}
+  \caption{Vgg16}
+  \label{vgg}
+\end{figure}
+
+\subsection{Optimizer}
+
+\subsection{Train/Val Split}
+
+\subsection{Batch size}
 
 \subsection{GPU VS CPU}
 
-\section{Problem 2}
+\subsection{Dropout}
+
+\subsection{Performance}
 
 \end{document}
