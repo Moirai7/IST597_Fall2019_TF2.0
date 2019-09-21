@@ -17,9 +17,9 @@ NUM_EXAMPLES = 10000
 #define inputs and outputs with some noise 
 X = tf.random.normal([NUM_EXAMPLES], seed=2612)  #inputs 
 #noise = tf.random.uniform([NUM_EXAMPLES], seed=2612) #noise 
-#noise = tf.random.gamma([NUM_EXAMPLES],1, seed=2612) #noise 
+noise = tf.random.gamma([NUM_EXAMPLES],1, seed=2612) #noise 
 #noise = tf.random.normal([NUM_EXAMPLES], seed=2612) #noise 
-noise = tf.random.normal([NUM_EXAMPLES], mean = 0.0, stddev=3.0, seed=2612) #noise 
+#noise = tf.random.normal([NUM_EXAMPLES], mean = 0.0, stddev=3.0, seed=2612) #noise 
 y = X * 3 + 2 + noise  #true output
 dataset = tf.data.Dataset.from_tensor_slices((X, y))
 
@@ -57,7 +57,7 @@ def huber_loss(y, y_predicted, m=1.0):
 def hybrid_loss(y, y_predicted):
   return huber_loss(y, y_predicted) + tf.reduce_mean(tf.abs(y - y_predicted))
 
-def train(loss_func, lr = learning_rate, iw = 0., ib = 0.):
+def train(loss_func, dropout=False, lr = learning_rate, iw = 0., ib = 0., noise = 0):
   W.assign(iw)
   b.assign(ib)
   check = False
@@ -66,6 +66,14 @@ def train(loss_func, lr = learning_rate, iw = 0., ib = 0.):
     db = dataset.batch(batch_size)
     for idx, (_x, _y) in db.enumerate():
       with tf.GradientTape() as tape:
+        if noise == 1:
+           _x = _x + tf.random.normal([batch_size], seed=2612)
+        elif noise == 2:
+           W.assign_sub(tf.random.normal([1], mean = 0, stddev = 0.1, seed=2612)[0])
+        elif noise == 3:
+           lr = learning_rate+tf.random.normal([1], mean = 0.001, stddev=0.002, seed=2612)[0]
+        if dropout != False:
+           _x = tf.nn.dropout(_x, dropout)
         yhat = prediction(_x)
         ###loss
         loss = loss_func(_y, yhat)
@@ -135,6 +143,7 @@ print(res)
 saveALL(res)
 '''
 
+
 ##lr
 '''
 for i in numpy.arange(0.001,0.01,0.002):
@@ -158,8 +167,8 @@ fc = ['train step: '+str(i) for i in range(500,1500,200)]
 saveALL(res, fc)
 '''
 
-'''
 ##initial
+'''
 for i in range(-1000,1100,500):
     train(hybrid_loss, iw = float(i))
     res.append([W.numpy(), b.numpy()])
@@ -177,13 +186,12 @@ print(res)
 fc = ['b: '+str(i) for i in range(-100,110,50)]
 saveALL(res, fc)
 '''
-'''
 ##duration
+'''
 print(X,y)
 for i in range(1000,10000,1000):
     train_steps = i
     train(huber_loss, iw = -100.)
-    print(X,y)
     print(W.numpy())
     res.append([W.numpy(), b.numpy()])
 
@@ -195,3 +203,9 @@ saveALL(res, fc)
 train(huber_loss)
 savefig('huber')
 print(W.numpy(), b.numpy())
+##noise2
+'''
+train(huber_loss, noise = 3)
+savefig('huber')
+print(W.numpy(), b.numpy())
+'''

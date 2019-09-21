@@ -6,10 +6,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
 import numpy as np
 import tensorflow as tf
-import tensorflow.contrib.eager as tfe
-tf.enable_eager_execution()
-
-assert tf.executing_eagerly()
 import time
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
@@ -35,11 +31,11 @@ train_data, test_data = tf.keras.datasets.fashion_mnist.load_data()
 train_images, train_labels = train_data
 train_images = tf.expand_dims(tf.cast(train_images, dtype=tf.float32),-1)
 train_labels = tf.cast(train_labels, dtype=tf.int64)
-train_labels = tf.reshape(train_labels, shape=[train_labels.shape[0],1])
 train_images /= 255.
 
 test_images, test_labels = test_data
 test_images = tf.expand_dims(tf.cast(test_images, dtype=tf.float32),-1)
+test_labels = tf.cast(test_labels, dtype=tf.int64)
 test_images /= 255.
 train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels))
 test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels))
@@ -47,7 +43,7 @@ train_dataset = train_dataset.shuffle(buffer_size).batch(batch_size)
 test_dataset = test_dataset.shuffle(buffer_size).batch(batch_size)
 
 # create one iterator and initialize it with different datasets
-features, label = iter(train_dataset).next()
+#features, label = iter(train_dataset).next()
 
 #img_test, label_test = next(iter(test_dataset))
 # Step 3: create weights and bias
@@ -67,11 +63,13 @@ features, label = iter(train_dataset).next()
 
 ##vgg16 
 #vgg16 = {"conv1_1":[3,3,1,64], "conv1_2":[3,3,64,64], "pool1":[1,2,2,1],"conv2_1":[3,3,64,128],"conv2_2":[3,3,128,128],"pool2":[1,2,2,1],"conv3_1":[3,3,128,256],"conv3_2":[3,3,256,256],"conv3_3":[3,3,256,256],"pool3":[1,2,2,1], "conv4_1":[3,3,256,512],"conv4_2":[3,3,512,512],"conv4_3":[3,3,512,512],"pool4":[1,2,2,1],"conv5_1":[3,3,512,512],"conv5_2":[3,3,512,512],"conv5_3":[3,3,512,512],"pool5":[1,2,2,1],"fc6":[512],"fc7":[10],"fc8":[10]}
-vgg16 = {"conv1_1":[3,3,1,32], "conv1_2":[3,3,32,32], "pool1":[1,2,2,1],"conv2_1":[3,3,32,16],"conv2_2":[3,3,16,16],"pool2":[1,2,2,1],"conv3_1":[3,3,16,8],"conv3_2":[3,3,8,8],"conv3_3":[3,3,8,8],"pool3":[1,2,2,1], "conv4_1":[3,3,8,4],"conv4_2":[3,3,4,4],"conv4_3":[3,3,4,4],"pool4":[1,2,2,1],"conv5_1":[3,3,4,4],"conv5_2":[3,3,4,4],"conv5_3":[3,3,4,4],"pool5":[1,2,2,1],"fc6":[4],"fc7":[10],"fc8":[10]}
+vgg16 = {"conv1_1":[3,3,1,32], "conv1_2":[3,3,32,32], "pool1":[1,2,2,1],"conv2_1":[3,3,32,64],"conv2_2":[3,3,64,64],"pool2":[1,2,2,1],"conv3_1":[3,3,64,128],"conv3_2":[3,3,128,128],"conv3_3":[3,3,128,128],"pool3":[1,2,2,1], "conv4_1":[3,3,128,256],"conv4_2":[3,3,256,256],"conv4_3":[3,3,256,256],"pool4":[1,2,2,1],"conv5_1":[3,3,256,256],"conv5_2":[3,3,256,256],"conv5_3":[3,3,256,256],"pool5":[1,2,2,1],"fc6":[256,128],"fc7":[128,64],"fc8":[64,10]}
 
 class Vgg16(tf.Module):        
   def __init__(self):
     super(Vgg16, self).__init__()
+    ##tensorflow 2.0 discourage name-based variable. use python objects to track variables
+    ##fc output size + conv+pool+relu or conv+relu+pool
     self.trainable = {}
     for name in vgg16.keys():
       if "conv" in name:
@@ -80,8 +78,8 @@ class Vgg16(tf.Module):
         self.trainable[name].append(tf.Variable(initial_value=tf.constant(0., shape=vgg16[name][-1], dtype=tf.float32), trainable=True, name=name+"/biases"))
       if "fc" in name:
         self.trainable[name]=[]
-        self.trainable[name].append(tf.Variable(trainable=True,initial_value=tf.random.truncated_normal([vgg16[name][0],10], dtype=tf.float32, stddev=0.05), name=name+"/weights"))
-        self.trainable[name].append(tf.Variable(initial_value=tf.constant(0., shape=[10], dtype=tf.float32), trainable=True, name=name+"/biases"))
+        self.trainable[name].append(tf.Variable(trainable=True,initial_value=tf.random.truncated_normal(vgg16[name], dtype=tf.float32, stddev=0.05), name=name+"/weights"))
+        self.trainable[name].append(tf.Variable(initial_value=tf.constant(0.05, shape=vgg16[name][-1], dtype=tf.float32), trainable=True, name=name+"/biases"))
 
   def conv_layer(self,bottom, name):
     with tf.name_scope(name):
@@ -89,12 +87,13 @@ class Vgg16(tf.Module):
         conv = tf.nn.conv2d(bottom, filters, [1, 1, 1, 1], padding='SAME')
         conv_biases = self.trainable[name][1]
         bias = tf.nn.bias_add(conv, conv_biases)
-        relu = tf.nn.relu(bias)
-        return relu
+        return bias
 
   def max_pool(self,bottom, name):
     with tf.name_scope(name):
-        return tf.nn.max_pool(bottom, ksize=vgg16[name], strides=vgg16[name], padding='SAME', name=name)
+        layer = tf.nn.max_pool2d(bottom, ksize=vgg16[name], strides=vgg16[name], padding='SAME', name=name)
+        relu = tf.nn.relu(layer)
+        return relu
 
   def fc_layer(self,bottom, name):
     with tf.name_scope(name):
@@ -107,6 +106,7 @@ class Vgg16(tf.Module):
         bias = self.trainable[name][1]
         return tf.nn.bias_add(tf.matmul(x, weight), bias)
 
+  @tf.function(input_signature=[tf.TensorSpec(shape=[batch_size, 28, 28, 1], dtype=tf.float32)])
   def __call__(self, batch_x):
     conv1_1 = self.conv_layer(batch_x, "conv1_1")
     conv1_2 = self.conv_layer(conv1_1, "conv1_2")
@@ -142,74 +142,131 @@ class Vgg16(tf.Module):
 
 class CNNs(tf.Module):
   def __init__(self):
-        self.conv1 = tf.layers.Conv2D(32, 3,
-                                      padding='same',
-                                      activation=tf.nn.relu)
-        self.maxpool = tf.layers.MaxPooling2D((2, 2),
-                                              strides=(2, 2),
-                                              padding='same')
-        self.conv2 = tf.layers.Conv2D(64, 3,
-                                      padding='same',
-                                      activation=tf.nn.relu)
-        self.conv3 = tf.layers.Conv2D(128, 3,
-                                      activation=tf.nn.relu)
-        self.dense1 = tf.layers.Dense(1024, activation=tf.nn.relu)
-        self.dense2 = tf.layers.Dense(512, activation=tf.nn.relu)
-        self.dropout = tf.layers.Dropout(0.5)
-        self.dense3 = tf.layers.Dense(10)
+    super(CNNs, self).__init__()
+    conv1_filter_size = 3
+    conv2_filter_size = 3
+    conv3_filter_size = 3
+    fc_layer_size = 128
+    num_filters1 = 32
+    num_filters2 = 64
+    num_filters3 = 128
+    features = 2048
+    self.weight1 = tf.Variable(tf.random.truncated_normal([conv1_filter_size,conv1_filter_size,1,num_filters1], stddev=0.05), trainable=True)
+    self.biases1 = tf.Variable(tf.constant(.05, shape=[num_filters1]), trainable=True)
+    self.beta1 = tf.Variable(tf.constant(0.0, shape=[num_filters1]),name='beta', trainable=True)
+    self.gamma1 = tf.Variable(tf.constant(1.0, shape=[num_filters1]),name='gamma', trainable=True)
+    self.weight2 = tf.Variable(tf.random.truncated_normal([conv2_filter_size,conv2_filter_size,num_filters1,num_filters2], stddev=0.05), trainable=True)
+    self.biases2 = tf.Variable(tf.constant(.05, shape=[num_filters2]), trainable=True)
+    self.beta2 = tf.Variable(tf.constant(0.0, shape=[num_filters2]),name='beta', trainable=True)
+    self.gamma2 = tf.Variable(tf.constant(1.0, shape=[num_filters2]),name='gamma', trainable=True)
+    self.weight3 = tf.Variable(tf.random.truncated_normal([conv3_filter_size,conv3_filter_size,num_filters2,num_filters3], stddev=0.05), trainable=True)
+    self.biases3 = tf.Variable(tf.constant(.05, shape=[num_filters3]), trainable=True)
+    self.beta3 = tf.Variable(tf.constant(0.0, shape=[num_filters3]),name='beta', trainable=True)
+    self.gamma3 = tf.Variable(tf.constant(1.0, shape=[num_filters3]),name='gamma', trainable=True)
+    self.weight4 = tf.Variable(tf.random.truncated_normal([features,fc_layer_size]), trainable=True)
+    self.biases4 = tf.Variable(tf.constant(.05, shape=[fc_layer_size]), trainable=True)
+    self.weight5 = tf.Variable(tf.random.truncated_normal([fc_layer_size,10]), trainable=True)
+    self.biases5 = tf.Variable(tf.constant(.05, shape=[10]), trainable=True)
 
-  def __call__(self, batch_x, training=True):
-        x = self.conv1(batch_x)
-        x = self.maxpool(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.maxpool(x)
-        x = tf.layers.flatten(x)
-        x = self.dense1(x)
-        x = self.dropout(x, training)
-        x = self.dense2(x)
-        x = self.dropout(x, training)
-        x = self.dense3(x)
-        return x
+  def __call__(self, batch_x):
+    layer = self.conv_layer(batch_x, self.weight1, self.biases1,self.beta1, self.gamma1)
+
+    layer = self.conv_layer(layer, self.weight2, self.biases2,self.beta2, self.gamma2)
+
+    layer = self.conv_layer(layer, self.weight3, self.biases3,self.beta3, self.gamma3)
+
+    layer_flat = self.create_flatten_layer(layer)
+
+    layer = tf.matmul(layer_flat, self.weight4) + self.biases4
+    layer = tf.nn.relu(layer)
+
+    layer = tf.matmul(layer, self.weight5) + self.biases5
+    return layer
+
+  def create_flatten_layer(self, layer):
+    layer_shape = layer.get_shape()
+    num_features = layer_shape[1:4].num_elements()
+    layer = tf.reshape(layer, [-1, num_features])
+    return layer
+
+  def conv_layer(self,batch_x,weight,biases,beta,gamma):
+    layer = tf.nn.conv2d(batch_x, weight, strides=[1,1,1,1], padding='SAME')
+    layer += biases
+    layer = tf.nn.max_pool2d(layer,[1,2,2,1],[1,2,2,1],padding='SAME')
+    batch_mean2, batch_var2 = tf.nn.moments(layer,[0])
+    layer = tf.nn.batch_normalization(layer,batch_mean2, batch_var2, beta, gamma, 1e-3)
+    layer = tf.nn.relu(layer)
+    if dropout_prob:
+       layer = tf.nn.dropout(layer,dropout_prob)
+    return layer
+
 
 
 # Step 5: define loss function
 # use cross entropy of softmax of logits as the loss function
 def cal_loss(logits, actual):
-    total_loss = tf.losses.sparse_softmax_cross_entropy(logits = logits,labels = actual)
+    total_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits = logits,labels = actual)
     return total_loss
 
 
 # Step 6: define optimizer
 # using Adam Optimizer with pre-defined learning rate to minimize loss
-optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+optimizer = tf.optimizers.Adam(learning_rate=learning_rate)
 
 
 # Step 7: calculate accuracy with test set
 from sklearn.metrics import accuracy_score
 def cal_acc(logits, label):
    preds = tf.argmax(tf.nn.softmax(logits),1)
-   print(logits.shape)
-   print(preds)
-   correct_preds = tf.equal(preds, label)
-   accuracy = tf.reduce_sum(tf.cast(correct_preds, tf.float32))
    return accuracy_score(preds, label)
-   return accuracy
+
+
+def test(mymodel):
+   _accs = 0
+   for ids,(x,y) in test_dataset.enumerate():
+      logits = mymodel(x)
+      _accs+= cal_acc(logits, y)*batch_size
+   return _accs/buffer_size
 
 #Step 8: train the model for n_epochs times
-mymodel = CNNs()#Vgg16()
-for i in range(n_epochs):
+def train():
+  train_loss_results = []
+  train_accuracy_results = []
+  mymodel = Vgg16()
+  best = 0.0
+  for i in range(n_epochs):
    total_loss = 0
    n_batches = 0
-   for (_x, _y) in tfe.Iterator(train_dataset):
+   acc = tf.metrics.Accuracy()
+   loss_avg = tf.metrics.Mean()
+   for idx, (_x, _y) in train_dataset.enumerate():
      with tf.GradientTape() as tape:
        logits = mymodel(_x)
        loss = cal_loss(logits, _y)
-     print(loss,cal_acc(logits, _y))
-     gradients = tape.gradient(loss, mymodel.variables)
+     print(idx,tf.reduce_mean(loss),cal_acc(logits, _y))
+     gradients = tape.gradient(loss, mymodel.trainable_variables)
      optimizer.apply_gradients(zip(gradients, mymodel.trainable_variables))
+     loss_avg(loss)
+     acc(tf.argmax(tf.nn.softmax(logits),1), _y)
+     ##test
+     if (idx % 9 == 0):
+        a = test(mymodel)
+        if (a>=best):
+           tf.saved_model.save(mymodel, 'model/vgg16/')
+           best = a
+        print(a)
+
+   train_loss_results.append(loss_avg.result())
+   train_accuracy_results.append(acc.result())
+   print("Epoch {:03d}: Loss: {:.3f}, Accuracy: {:.3%}".format(i,loss_avg.result(),acc.result()))
 
 #Step 9: Get the Final test accuracy
+def test_all():
+   mymodel = tf.saved_model.load('model/vgg16/')
+   a = test(mymodel)
+   print(a)
+
+test_all()
 
 #Step 10: Helper function to plot images in 3*3 grid
 #You can change the function based on your input pipeline
