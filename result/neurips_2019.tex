@@ -11,6 +11,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{amsmath}
 \usepackage{graphicx}
+\usepackage{subfigure}
 \title{Exeriese 2}
 
 \author{%
@@ -27,18 +28,11 @@ Solved on 09/17/2019. The seed I used for noise generation is 2612.
 
 \subsection{Loss Function}
 
-Given an input $x$ with an output $y$, the prediction is $\hat{y}$. The performance of squared loss function shows in Figure\ref{squared_loss_fuc}. 
+Given an input $x$ with an output $y$, the prediction is $\hat{y}$. The performance of squared loss function shown in Figure\ref{loss} (a). 
 
 
 The formulation of squared loss is:
 $$squared\_loss = \frac{1}{N}\sum_0^N{(y_i - \hat{y_i})^2}$$
-
-\begin{figure}[!h]
-  \centering
-  \includegraphics[scale=0.4]{imgs/squared.pdf}
-  \caption{Squared loss}
-  \label{squared_loss_fuc}
-\end{figure}
 
 Given the parameter delta = 1.0. The formulation of huber loss is:
 $$huber\_loss = \left\{\begin{matrix}
@@ -46,35 +40,50 @@ $$huber\_loss = \left\{\begin{matrix}
 d*|(y - \hat{y})| - 0.5 * d^2 & if |(y - \hat{y})| >  d
 \end{matrix}\right.$$
 
-The performance of huber loss function shows in Figure\ref{huber_loss_fuc}. 
+The performance of huber loss function shown in Figure \ref{loss} (b). 
 
-I also implement the following hybrid loss function and the performance shows in Figure \ref{hybrid_loss}. 
+\begin{figure}[htbp]
+\centering
+\subfigure[Squared los]{
+  \begin{minipage}{0.4\linewidth}
+  \centering
+  \includegraphics[scale=0.4]{imgs/squared.pdf}
+  \end{minipage}
+}
+\quad
+\quad
+\subfigure[Huber loss]{
+\begin{minipage}{0.4\linewidth}
+\centering
+  \includegraphics[scale=0.4]{imgs/huber.pdf}
+  \end{minipage}
+}
+
+
+\subfigure[Hybrid loss]{
+\begin{minipage}{0.4\linewidth}
+\centering
+  \includegraphics[scale=0.4]{imgs/hybrid.pdf}
+  \end{minipage}
+}
+\quad
+\quad
+\subfigure[Performance of different loss function]{
+\begin{minipage}{0.4\linewidth}
+\centering
+  \includegraphics[scale=0.4]{imgs/all.pdf}
+  \end{minipage}
+}
+\caption{ Loss function}
+\label{loss}
+\end{figure}
+
+I also implement the following hybrid loss function and the performance shown in Figure \ref{loss} (c). 
 $$hybrid\_loss = huber\_loss + |y - \hat{y}|$$
 
-If I didn't use $tf.reduce\_mean$ in squared loss, the result of parameters $W$ and $b$ will turn out to be NaN. I found the issue will happen on tensorflow 2.0. But on tensorflow 1.14, sometimes it can output a correct answer. I'm not sure about the reason. but I think it maybe because something lead to overflow at some point during gradient descent and cause NaNs.
+If I didn't use $tf.reduce\_mean$ in squared loss, the result of parameters $W$ and $b$ will turn out to be NaN. I found the issue will happen on tensorflow 2.0. But on tensorflow 1.14, sometimes it can output a correct answer. I'm not sure about the reason. But I think the loss is too large, which may result in NaN after several steps of gradients. 
 
-It's hard to tell which loss function works better(see Figure\ref{all_loss}). I've run the code with those two loss function multiple times and both of them work well. If I use the distance of the predicted parameters $\hat{W}, \hat{b}$ and original parameters $W, b$ as a measure of the performance($distances = |W-\hat{W}| + |b-\hat{b}|$), the squared loss(.0133321) work better than huber loss(.0238144).
-
-\begin{figure}
-  \centering
-  \includegraphics[scale=0.4]{imgs/huber.pdf}
-  \caption{Huber loss}
-  \label{huber_loss_fuc}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \includegraphics[scale=0.4]{imgs/hybrid.pdf}
-  \caption{Hybrid loss}
-  \label{hybrid_loss}
-\end{figure}
-
-\begin{figure}[!h]
-  \centering
-  \includegraphics[scale=0.4]{imgs/all.pdf}
-  \caption{Performance of different loss}
-  \label{all_loss}
-\end{figure}
+It's hard to tell which loss function works better(see Figure\ref{loss} (d). I've run the code with those two loss function multiple times and both of them work well. If I use the distance of the predicted parameters $\hat{W}, \hat{b}$ and original parameters $W, b$ as a measure of the performance($distances = |W-\hat{W}| + |b-\hat{b}|$), the squared loss(.0133321) work better than huber loss(.0238144).
 
 
 \subsection{Learning rate}
@@ -133,6 +142,11 @@ I've tested different training steps from 500 to 1500 with the incrementation 20
   \end{tabular}
 \end{table}
 
+\subsection{Initial Value of parameters}
+Table \ref{tab:w} and Table \ref{tab:b} respectively denote predicted parameters with different initial parameter W and b(both of them are from -1000 to 1000 with the incrementation 500).
+
+If I initialize the parameter W with a small number like -1000 with hybrid Loss, the predicted parameter W will become -984.0698 after 1000 epochs. That is because the model has not yet converged after 1000 epochs. Figure \ref{epoch} is the performance of different traing epoch with the initial parameter $W=-100$. Desipt the predicted parameters after 9000 epochs are far from the correct answer, it is gradually approaching to the correct answer.
+
 \begin{table}[!h]
   \caption{The performance of different W after 1000 epochs}
   \label{tab:w}
@@ -166,13 +180,6 @@ I've tested different training steps from 500 to 1500 with the incrementation 20
     \bottomrule
   \end{tabular}
 \end{table}
-
-
-\subsection{Initial Value of parameters}
-Table \ref{tab:w} and Table \ref{tab:b} respectively denote predicted parameters with different initial parameter W and b(both of them are from -1000 to 1000 with the incrementation 500).
-
-If I initialize the parameter W with a small number like -1000 with hybrid Loss, the predicted parameter W will become -984.0698 after 1000 epochs. That is because the model has not yet converged after 1000 epochs. Figure \ref{epoch} is the performance of different traing epoch with the initial parameter $W=-100$. Desipt the predicted parameters after 9000 epochs are far from the correct answer, it is gradually approaching to the correct answer.
-
 
 
 \begin{figure}[!h]
@@ -254,7 +261,7 @@ I tested training time with GPU and CPU on Calab. I used each of them to run the
 The training time looks unreasonable. I think it may be because it's not the correct running time considering the network speed and the design of Calab.
 
 \section{Problem 2}
-Solved on 09/21/2019. I implemented two model for fminist. The first one is Vgg16(shown as Figure \ref{vgg}). Another one is multilayer CNNs with batch norm. The accuracy of Vgg16 on test dataset can achieve 92.43\% after 14 epochs. The following reports is based on multilayer CNNs model not Vgg16, because Vgg16 takes for a while per epoch.
+Solved on 09/21/2019. I implemented two model for fminist. The first one is Vgg16(shown as Figure \ref{vgg}). Another one is multilayer CNNs with batch norm. The accuracy of Vgg16 on test dataset can achieve 92.45\% after 15 epochs. Another model achieves 90.67\% after 120 epochs. Figure \ref{res} is an example of images and their prediction .The following reports is based on multilayer CNNs model not Vgg16, because Vgg16 takes for a while per epoch.
 
 \begin{figure}[!h]
   \centering
@@ -263,16 +270,324 @@ Solved on 09/21/2019. I implemented two model for fminist. The first one is Vgg1
   \label{vgg}
 \end{figure}
 
+\begin{figure}[!h]
+  \centering
+  \includegraphics[scale=0.4]{imgs/result.pdf}
+  \caption{Samples}
+  \label{res}
+\end{figure}
+
 \subsection{Optimizer}
+Figure \ref{adam} is the loss and accuracy on train dataset and test dataset using Adam optimizer. Figure \ref{ada} is the performance of Adagrad optimizer. Figure\ref{nadam} is the performance of Nadam optimizer. Adam optimizer could converge faster and generalize better. I tested SGD Optimizer($momentum=0.9$). After 8 iterations, the loss will turn to $NaN$. Maybe it is the same reason I listed in problem 1. The exploding gradients problem lead to overflow at some point during gradient descent and cause NaNs.
+
+\begin{figure}[!h]
+\subfigure[train loss ]{
+  \begin{minipage}{0.21\linewidth}
+  \centering
+  \includegraphics[scale=0.23]{imgs/train_loss_adam.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[train accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/train_acc_adam.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test loss ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_loss_adam.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_acc_adam.pdf}
+  \end{minipage}
+}
+\caption{ Adam Optimizer}
+\label{adam}
+\end{figure}
+
+\begin{figure}[!h]
+\subfigure[train loss]{
+  \begin{minipage}{0.21\linewidth}
+  \centering
+  \includegraphics[scale=0.23]{imgs/train_loss_ada.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[train accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/train_acc_ada.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test loss ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_loss_ada.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_acc_ada.pdf}
+  \end{minipage}
+}
+\caption{ Adagrad Optimizer}
+\label{ada}
+\end{figure}
+
+
+\begin{figure}[!h]
+\subfigure[train loss ]{
+  \begin{minipage}{0.21\linewidth}
+  \centering
+  \includegraphics[scale=0.23]{imgs/train_loss_nadam.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[train accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/train_acc_nadam.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test loss ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_loss_nadam.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_acc_nadam.pdf}
+  \end{minipage}
+}
+\caption{ NAdam Optimizer}
+\label{nadam}
+\end{figure}
+
+\subsection{Train for longer epochs}
+Figure \ref{over} is the result if I train the model for more epochs. At first, I thought the decreasing accuracy on test dataset means the model is already overfitting. But with longer epochs, it turns out the model just fall into local minima. And the accuracy can reach 90.67\% after 120 epochs.
+
+\begin{figure}[!h]
+\subfigure[train loss ]{
+  \begin{minipage}{0.21\linewidth}
+  \centering
+  \includegraphics[scale=0.23]{imgs/train_loss_fit.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[train accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/train_acc_fit.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test loss ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_loss_fit.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_acc_fit.pdf}
+  \end{minipage}
+}
+\caption{More Training time}
+\label{over}
+\end{figure}
 
 \subsection{Train/Val Split}
+Figure \ref{tv0.1} is the result(best accuracy is 86.57\% on test dataset) that the proportion of train dataset to test dataset is 9:1. Before this section, the ratio of train and test dataset is 6:1, and the result(best accuracy on test dataset is 85.87\%) shows in Figure \ref{adam}. Figure \ref{tv0.3} is the result(best accuracy is 86.10\% on test dataset) that the proportion of train dataset to test dataset is 7:3.   Figure \ref{tv0.4} is the result(best accuracy is 84.72\% on test dataset) that the proportion of train dataset to test dataset is 6:4. 
+
+The model need enough data to train, so less train dataset have greater variance. But more train dataset can not guarantee robust measure of error.
+
+\begin{figure}[!h]
+\subfigure[train loss ]{
+  \begin{minipage}{0.21\linewidth}
+  \centering
+  \includegraphics[scale=0.23]{imgs/train_loss_1.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[train accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/train_acc_1.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test loss ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_loss_1.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_acc_1.pdf}
+  \end{minipage}
+}
+\caption{ train dataset : test dataset = 9 : 1}
+\label{tv0.1}
+\end{figure}
+
+\begin{figure}[!h]
+\subfigure[train loss ]{
+  \begin{minipage}{0.21\linewidth}
+  \centering
+  \includegraphics[scale=0.23]{imgs/train_loss_3.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[train accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/train_acc_3.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test loss ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_loss_3.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_acc_3.pdf}
+  \end{minipage}
+}
+\caption{ train dataset : test dataset = 7 : 3}
+\label{tv0.3}
+\end{figure}
+
+
+\begin{figure}[!h]
+\subfigure[train loss ]{
+  \begin{minipage}{0.21\linewidth}
+  \centering
+  \includegraphics[scale=0.23]{imgs/train_loss_4.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[train accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/train_acc_4.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test loss ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_loss_4.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_acc_4.pdf}
+  \end{minipage}
+}
+\caption{ train dataset : test dataset = 6 : 4}
+\label{tv0.4}
+\end{figure}
 
 \subsection{Batch size}
+Figure \ref{bs500} is the result of batch size 500, which can reach 86.84\% on accuracy within 15 epochs. Figure \ref{adam} is the result of batch size 1000, whose  the maximum of accuracy is  85.87\%. Figure \ref{bs1500} is the result of batch size 1500, whose  the maximum of accuracy is  85.20\%.  Batch size will definitely affects the performance of model. But a smaller batch size also lends to longer training time. So we need to balance those two factors based on different requirements.
+
+\begin{figure}[!h]
+\subfigure[train loss ]{
+  \begin{minipage}{0.21\linewidth}
+  \centering
+  \includegraphics[scale=0.23]{imgs/train_loss_500.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[train accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/train_acc_500.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test loss ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_loss_500.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_acc_500.pdf}
+  \end{minipage}
+}
+\caption{ Batch size: 500}
+\label{bs500}
+\end{figure}
+
+\begin{figure}[!h]
+\subfigure[train loss ]{
+  \begin{minipage}{0.21\linewidth}
+  \centering
+  \includegraphics[scale=0.23]{imgs/train_loss_1500.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[train accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/train_acc_1500.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test loss ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_loss_1500.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_acc_1500.pdf}
+  \end{minipage}
+}
+\caption{ Batch size: 1500}
+\label{bs1500}
+\end{figure}
 
 \subsection{GPU VS CPU}
 
-\subsection{Dropout}
+\subsection{Overfit}
+The CNNs model is not overfit according to Figure \ref{over}. Normally, I'll run a model for a few epochs. If the accuracy(loss) on train dataset is very desired while those measures on test dataset is still unreasonable, I assume the model overfits. For example, it would be a red signal if the model has 99\% accuracy on the training dataset but only 50\% accuracy on the test dataset. I'll use dropout and regularization to prevent the model overfit.
 
-\subsection{Performance}
+
+\subsection{Performance compared with other algorithm}
+I tried random forest classifier(n\_estimators=100, max\_depth=30), which can achieve 87.57\% on accuracy. Decision tree could achieve 79.02\%. KNeighbors could achieve 85.54\%.
 
 \end{document}
