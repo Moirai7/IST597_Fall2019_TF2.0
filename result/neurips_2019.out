@@ -8,10 +8,12 @@
 \BOOKMARK [2][-]{subsection.1.7}{Significance of seed}{section.1}% 8
 \BOOKMARK [2][-]{subsection.1.8}{GPU VS CPU}{section.1}% 9
 \BOOKMARK [1][-]{section.2}{Problem 2}{}% 10
-\BOOKMARK [2][-]{subsection.2.1}{Optimizer}{section.2}% 11
-\BOOKMARK [2][-]{subsection.2.2}{Train for longer epochs}{section.2}% 12
-\BOOKMARK [2][-]{subsection.2.3}{Train/Val Split}{section.2}% 13
-\BOOKMARK [2][-]{subsection.2.4}{Batch size}{section.2}% 14
-\BOOKMARK [2][-]{subsection.2.5}{GPU VS CPU}{section.2}% 15
-\BOOKMARK [2][-]{subsection.2.6}{Overfit}{section.2}% 16
-\BOOKMARK [2][-]{subsection.2.7}{Performance compared with other algorithm}{section.2}% 17
+\BOOKMARK [2][-]{subsection.2.1}{Performance of three models}{section.2}% 11
+\BOOKMARK [2][-]{subsection.2.2}{Optimizer}{section.2}% 12
+\BOOKMARK [2][-]{subsection.2.3}{Train for longer epochs}{section.2}% 13
+\BOOKMARK [2][-]{subsection.2.4}{Train/Val Split}{section.2}% 14
+\BOOKMARK [2][-]{subsection.2.5}{Batch size}{section.2}% 15
+\BOOKMARK [2][-]{subsection.2.6}{GPU VS CPU}{section.2}% 16
+\BOOKMARK [2][-]{subsection.2.7}{Overfit}{section.2}% 17
+\BOOKMARK [2][-]{subsection.2.8}{Performance compared with other algorithms}{section.2}% 18
+\BOOKMARK [2][-]{subsection.2.9}{Cluster on weights}{section.2}% 19

@@ -28,7 +28,7 @@ Solved on 09/17/2019. The seed I used for noise generation is 2612.
 
 \subsection{Loss Function}
 
-Given an input $x$ with an output $y$, the prediction is $\hat{y}$. The performance of squared loss function shown in Figure\ref{loss} (a). 
+Given an input $x$ with an output $y$, the prediction is $\hat{y}$. The performance of the squared loss function shown in Figure\ref{loss} (a). 
 
 
 The formulation of squared loss is:
@@ -40,7 +40,7 @@ $$huber\_loss = \left\{\begin{matrix}
 d*|(y - \hat{y})| - 0.5 * d^2 & if |(y - \hat{y})| >  d
 \end{matrix}\right.$$
 
-The performance of huber loss function shown in Figure \ref{loss} (b). 
+The performance of the Huber loss function shown in Figure \ref{loss} (b). 
 
 \begin{figure}[htbp]
 \centering
@@ -81,14 +81,14 @@ The performance of huber loss function shown in Figure \ref{loss} (b).
 I also implement the following hybrid loss function and the performance shown in Figure \ref{loss} (c). 
 $$hybrid\_loss = huber\_loss + |y - \hat{y}|$$
 
-If I didn't use $tf.reduce\_mean$ in squared loss, the result of parameters $W$ and $b$ will turn out to be NaN. I found the issue will happen on tensorflow 2.0. But on tensorflow 1.14, sometimes it can output a correct answer. I'm not sure about the reason. But I think the loss is too large, which may result in NaN after several steps of gradients. 
+If I didn't use $tf.reduce\_mean$ in squared loss, the result of parameters $W$ and $b$ will turn out to be NaN. I found the issue will happen on TensorFlow 2.0. But on Tensorflow 1.14, sometimes it can output a correct answer. I'm not sure about the reason. But I think the loss is too large, which may result in NaN after several steps of gradients. 
 
-It's hard to tell which loss function works better(see Figure\ref{loss} (d). I've run the code with those two loss function multiple times and both of them work well. If I use the distance of the predicted parameters $\hat{W}, \hat{b}$ and original parameters $W, b$ as a measure of the performance($distances = |W-\hat{W}| + |b-\hat{b}|$), the squared loss(.0133321) work better than huber loss(.0238144).
+It's hard to tell which loss function works better(see Figure\ref{loss} (d). I've run the code with those two loss functions multiple times and both of them work well. If I use the distance of the predicted parameters $\hat{W}, \hat{b}$ and original parameters $W, b$ as a measure of the performance($distances = |W-\hat{W}| + |b-\hat{b}|$), the squared loss(.0133321) work better than Huber loss(.0238144).
 
 
 \subsection{Learning rate}
 
-I implemented patience scheduling. Then I tested learning rate from 0.001 to 0.01 with the incrementation 0.002, Shown in Figure \ref{lr}. Table \ref{tab:lr} shows the parameters learned under different learning rate with patience scheduling. The result are quite similar. All of them approximate to the correct parameters. 
+I implemented patience scheduling. Then I tested the learning rate from 0.001 to 0.01 with the incrementation 0.002, Shown in Figure \ref{lr}. Table \ref{tab:lr} shows the parameters learned under different learning rate with patience scheduling. The results are quite similar. All of them approximate to the correct parameters. 
 
 \begin{figure}
   \centering
@@ -115,7 +115,7 @@ I implemented patience scheduling. Then I tested learning rate from 0.001 to 0.0
 \end{table}
 
 \subsection{Training steps}
-I've tested different training steps from 500 to 1500 with the incrementation 200. Shown in Figure \ref{ts}. With longer duration, the performance tend to be better. However, after "enough" steps, this effects start to stabilize (see Table \ref{tab:ts}).
+I've tested different training steps from 500 to 1500 with the incrementation 200. Shown in Figure \ref{ts}. With a longer duration, the performance tends to be better. However, after "enough" steps, this effects start to stabilize (see Table \ref{tab:ts}).
 
 
 \begin{figure}[!h]
@@ -145,7 +145,7 @@ I've tested different training steps from 500 to 1500 with the incrementation 20
 \subsection{Initial Value of parameters}
 Table \ref{tab:w} and Table \ref{tab:b} respectively denote predicted parameters with different initial parameter W and b(both of them are from -1000 to 1000 with the incrementation 500).
 
-If I initialize the parameter W with a small number like -1000 with hybrid Loss, the predicted parameter W will become -984.0698 after 1000 epochs. That is because the model has not yet converged after 1000 epochs. Figure \ref{epoch} is the performance of different traing epoch with the initial parameter $W=-100$. Desipt the predicted parameters after 9000 epochs are far from the correct answer, it is gradually approaching to the correct answer.
+If I initialize the parameter W with a small number like -1000 with hybrid Loss, the predicted parameter W will become -984.0698 after 1000 epochs. That is because the model has not yet converged after 1000 epochs. Figure \ref{epoch} is the performance of different training epoch with the initial parameter $W=-100$. Despite the predicted parameters after 9000 epochs are far from the correct answer, it is gradually approaching to the correct answer.
 
 \begin{table}[!h]
   \caption{The performance of different W after 1000 epochs}
@@ -190,7 +190,7 @@ If I initialize the parameter W with a small number like -1000 with hybrid Loss,
 \end{figure}
 
 \subsection{Noise in data}
-Before this section, I generated noise in data using normal distribution. Table \ref{noise} shows the results of different noise distribution. The distribution of noise can affect the prediction. Table \ref{normal1} shows the results of normal distribution with different mean. Table \ref{normal2} shows the results of normal distribution with different std. The level of noise is higher, the model is harder to converge.
+Before this section, I generated noise in data using the normal distribution. Table \ref{noise} shows the results of the different noise distribution. The distribution of noise can affect the prediction. Table \ref{normal1} shows the results of the normal distribution with different mean. Table \ref{normal2} shows the results of the normal distribution with different std. The level of noise is higher, the model is harder to converge.
 
 \begin{table}[!h]
   \caption{The performance of different noise in data}
@@ -247,22 +247,26 @@ Finally, I added noises(normal distribution: $mean = 0.001$, $stddev=0.002$) in 
 
 Noise in data and weight will change the performance of the model. If noise in learning rate is reasonable, it may affect training time. But it will not change the general performance of the model, except it reaches local minima. For example, it may lead to faster convergence or make the model hard to converge. 
 
-On other classification problems and mathematical models, noise in data and weight will also reduce model's performance. But adding small noise in learning rate may make it possible to get rid of local minima.  
+On other classification problems and mathematical models, noise in data and weight will also reduce the model's performance. But adding small noise in learning rate may make it possible to get rid of local minima.  
 
 \subsection{Significance of seed}
-If I use the same seed to generate noise, I will get the same results every time I run the code without change any parameters. Because the pseudorandom number generating algorithms is designed to performing operation on a seed. So the result of algorithms is determined by the seed. If I want to change the result every time, I can use current time as the seed.
+If I use the same seed to generate noise, I will get the same results every time I run the code without change any parameters. Because the pseudorandom number generating algorithms is designed for performing an operation on a seed. So the result of algorithms is determined by the seed. If I want to change the result every time, I can use the current time as the seed.
 
 %\subsection{Dropout}
-%On real world dataset, I'll try to dropout some values because usually the outliers are not 
+%On real-world dataset, I'll try to dropout some values because usually, the outliers are not 
 
 \subsection{GPU VS CPU}
-I tested training time with GPU and CPU on Calab. I used each of them to run the same code for 1000 epochs. And the approximate running time per epoch of CPU is 0.030322 and of GPU is 0.073198. 
+I tested training time with GPU and CPU on Calab. I used each of them to run the same code for 1000 epochs. And the approximate running time of CPU per epoch is 0.029198 and of GPU is 0.05428. 
 
-The training time looks unreasonable. I think it may be because it's not the correct running time considering the network speed and the design of Calab.
+The training time looks unreasonable. I think it may be because it's not the correct running time considering the network speed and the design of Calab. It may also because the linear regression model doesn't fit to calculate on GPU.
 
 \section{Problem 2}
-Solved on 09/21/2019. I implemented two model for fminist. The first one is Vgg16(shown as Figure \ref{vgg}). Another one is multilayer CNNs with batch norm. The accuracy of Vgg16 on test dataset can achieve 92.45\% after 15 epochs. Another model achieves 90.67\% after 120 epochs. Figure \ref{res} is an example of images and their prediction .The following reports is based on multilayer CNNs model not Vgg16, because Vgg16 takes for a while per epoch.
+Solved on 09/21/2019. 
 
+\subsection{Performance of three models}
+I implemented three models for fminist. 
+
+The first one is Vgg16(shown as Figure \ref{vgg}). Another one is multilayer CNNs with batch norm. The accuracy of Vgg16 on test dataset can achieve 92.45\% after 15 epochs. 
 \begin{figure}[!h]
   \centering
   \includegraphics[scale=0.5]{imgs/vgg.pdf}
@@ -270,6 +274,7 @@ Solved on 09/21/2019. I implemented two model for fminist. The first one is Vgg1
   \label{vgg}
 \end{figure}
 
+Another model achieves 90.67\% after 120 epochs. Figure \ref{res} is an example of images and CNNs model's prediction. Figure \ref{filt} is the weights of the first layer in CNNs model. 
 \begin{figure}[!h]
   \centering
   \includegraphics[scale=0.4]{imgs/result.pdf}
@@ -277,8 +282,27 @@ Solved on 09/21/2019. I implemented two model for fminist. The first one is Vgg1
   \label{res}
 \end{figure}
 
+\begin{figure}[!h]
+  \centering
+  \includegraphics[scale=0.5]{imgs/weight.pdf}
+  \caption{Filters' weights of the first layer in CNNs model}
+  \label{filt}
+\end{figure}
+
+I also implement linear model as problem 1 in this dataset. It can achieve 82.6\% after 120 epochs. Figure \ref{weight} is the weights of the first layer in CNNs model.
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[scale=1.]{imgs/weights.pdf}
+  \caption{Weights of the first layer in linear model}
+  \label{weight}
+\end{figure}
+
+The following reports are based on multilayer CNNs model not Vgg16, because Vgg16 takes for a while per epoch.
+
+
 \subsection{Optimizer}
-Figure \ref{adam} is the loss and accuracy on train dataset and test dataset using Adam optimizer. Figure \ref{ada} is the performance of Adagrad optimizer. Figure\ref{nadam} is the performance of Nadam optimizer. Adam optimizer could converge faster and generalize better. I tested SGD Optimizer($momentum=0.9$). After 8 iterations, the loss will turn to $NaN$. Maybe it is the same reason I listed in problem 1. The exploding gradients problem lead to overflow at some point during gradient descent and cause NaNs.
+Figure \ref{adam} is the loss and accuracy of train dataset and test dataset using Adam optimizer. Figure \ref{ada} is the performance of Adagrad optimizer. Figure\ref{nadam} is the performance of Nadam optimizer. Adam optimizer could converge faster and generalize better. I tested SGD Optimizer($momentum=0.9$). After 8 iterations, the loss will turn to $NaN$. Maybe it is the same reason I listed in problem 1. The exploding gradients problem lead to overflow at some point during gradient descent and cause NaNs.
 
 \begin{figure}[!h]
 \subfigure[train loss ]{
@@ -413,9 +437,9 @@ Figure \ref{over} is the result if I train the model for more epochs. At first, 
 \end{figure}
 
 \subsection{Train/Val Split}
-Figure \ref{tv0.1} is the result(best accuracy is 86.57\% on test dataset) that the proportion of train dataset to test dataset is 9:1. Before this section, the ratio of train and test dataset is 6:1, and the result(best accuracy on test dataset is 85.87\%) shows in Figure \ref{adam}. Figure \ref{tv0.3} is the result(best accuracy is 86.10\% on test dataset) that the proportion of train dataset to test dataset is 7:3.   Figure \ref{tv0.4} is the result(best accuracy is 84.72\% on test dataset) that the proportion of train dataset to test dataset is 6:4. 
+Figure \ref{tv0.1} is the result(best accuracy is 86.57\% on test dataset) that the proportion of train dataset to test dataset is 9:1. Before this section, the ratio of train and test dataset is 6:1, and the result(best accuracy on the test dataset is 85.87\%) shows in Figure \ref{adam}. Figure \ref{tv0.3} is the result(best accuracy is 86.10\% on test dataset) that the proportion of train dataset to test dataset is 7:3.   Figure \ref{tv0.4} is the result(best accuracy is 84.72\% on test dataset) that the proportion of train dataset to test dataset is 6:4. 
 
-The model need enough data to train, so less train dataset have greater variance. But more train dataset can not guarantee robust measure of error.
+The model needs enough data to train, so less train dataset has greater variance. But more train dataset can not guarantee a robust measure of error.
 
 \begin{figure}[!h]
 \subfigure[train loss ]{
@@ -515,7 +539,7 @@ The model need enough data to train, so less train dataset have greater variance
 \end{figure}
 
 \subsection{Batch size}
-Figure \ref{bs500} is the result of batch size 500, which can reach 86.84\% on accuracy within 15 epochs. Figure \ref{adam} is the result of batch size 1000, whose  the maximum of accuracy is  85.87\%. Figure \ref{bs1500} is the result of batch size 1500, whose  the maximum of accuracy is  85.20\%.  Batch size will definitely affects the performance of model. But a smaller batch size also lends to longer training time. So we need to balance those two factors based on different requirements.
+Figure \ref{bs500} is the result of batch size 500, which can reach 86.84\% on accuracy within 15 epochs. Figure \ref{adam} is the result of batch size 1000, whose maximum of accuracy is  85.87\%. Figure \ref{bs1500} is the result of batch size 1500, whose maximum of accuracy is  85.20\%.  Batch size will affect the performance of the model. But a smaller batch size also lends to longer training time. So we need to balance those two factors based on different requirements.
 
 \begin{figure}[!h]
 \subfigure[train loss ]{
@@ -582,12 +606,34 @@ Figure \ref{bs500} is the result of batch size 500, which can reach 86.84\% on a
 \end{figure}
 
 \subsection{GPU VS CPU}
+I tested training time with GPU and CPU on Calab. The approximate running time of CPU per epoch is 114.79436 and of GPU is 6.03704. 
+
+Unlike problem 1, with the model CNNs, the training time on CPU per epoch is almost 20 times than training time on GPU. 
 
 \subsection{Overfit}
-The CNNs model is not overfit according to Figure \ref{over}. Normally, I'll run a model for a few epochs. If the accuracy(loss) on train dataset is very desired while those measures on test dataset is still unreasonable, I assume the model overfits. For example, it would be a red signal if the model has 99\% accuracy on the training dataset but only 50\% accuracy on the test dataset. I'll use dropout and regularization to prevent the model overfit.
+The CNNs model is not overfitting according to Figure \ref{over}. Normally, I'll run a model for a few epochs. If the accuracy(loss) on train dataset is very desired while those measures on the test dataset are still unreasonable, I assume the model overfits. For example, it would be a red signal if the model has 99\% accuracy on the training dataset but only 50\% accuracy on the test dataset. I'll use dropout and regularization to prevent the model overfit.
 
 
-\subsection{Performance compared with other algorithm}
-I tried random forest classifier(n\_estimators=100, max\_depth=30), which can achieve 87.57\% on accuracy. Decision tree could achieve 79.02\%. KNeighbors could achieve 85.54\%.
+\subsection{Performance compared with other algorithms}
+I tried random forest classifier(n\_estimators=100, max\_depth=30), which can achieve 87.57\% on accuracy. Decision tree algorithm could achieve 79.02\%. KNeighbors algorithm could achieve 85.54\%.
+
+\subsection{Cluster on weights}
+Because there are many weights in CNNs model, I clustered the weights from the linear model.
+
+I tried kmeans and ksne to obtain 2 cluster as the horizontal and vertical coordinate. Figure \ref{kmean} is the result of kmeans, and Figure \ref{ksne} is the result of ksne. It's hard to see the difference in those graph.
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[scale=0.5]{imgs/kmeans.png}
+  \caption{KMEANS}
+  \label{kmean}
+\end{figure}
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[scale=0.5]{imgs/ksne.png}
+  \caption{KSNE}
+  \label{ksne}
+\end{figure}
 
 \end{document}

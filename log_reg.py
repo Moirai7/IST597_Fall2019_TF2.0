@@ -104,7 +104,56 @@ def plot_weights():
         ax.set_yticks([])
     plt.show()
 
+import matplotlib as mpl
+mpl.rcParams['figure.dpi'] = 600
 optimize()
 print_accuracy()
 plot_weights()
 #print_confusion_martix()
+
+
+from sklearn.manifold import TSNE
+import seaborn as sns
+import matplotlib.patheffects as PathEffects
+def fashion_scatter(x, colors):
+    # choose a color palette with seaborn.
+    num_classes = len(np.unique(colors))
+    palette = np.array(sns.color_palette("hls", num_classes))
+
+    # create a scatter plot.
+    f = plt.figure(figsize=(8, 8))
+    ax = plt.subplot(aspect='equal')
+    sc = ax.scatter(x[:,0], x[:,1], lw=0, s=40, c=palette[colors.astype(np.int)])
+    plt.xlim(-25, 25)
+    plt.ylim(-25, 25)
+    ax.axis('off')
+    ax.axis('tight')
+
+    # add the labels for each digit corresponding to the label
+    txts = []
+
+    for i in range(num_classes):
+
+        # Position of each label at median of data points.
+
+        xtext, ytext = np.median(x[colors == i, :], axis=0)
+        txt = ax.text(xtext, ytext, str(i), fontsize=24)
+        txt.set_path_effects([
+            PathEffects.Stroke(linewidth=5, foreground="w"),
+            PathEffects.Normal()])
+        txts.append(txt)
+
+    return f, ax, sc, txts
+
+
+def clustering():
+  w = weights.numpy().T
+  label = np.concatenate(np.array([ np.ones(img_size_flat)*i for i in range(10)]))
+  out = TSNE(n_components=2).fit_transform(np.concatenate(w).reshape(-1,1))
+  print(out)
+  fashion_scatter(out,label)
+     
+
+          
+          
+clustering()

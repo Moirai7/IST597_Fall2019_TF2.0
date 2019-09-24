@@ -304,7 +304,7 @@ def test_all():
    a,l = test(mymodel)
    print(a)
 
-train()
+#train()
 #test_all()
 
 #Step 10: Helper function to plot images in 3*3 grid
@@ -344,22 +344,28 @@ def test_img():
    plot_images(images=images, y=y, yhat=predict(logits)[0:9])
 
 #test_img()
-#Second plot weights 
-def plot_weights(w=None):
-    w_min = None
-    w_max = None
 
-    fig, axes = plt.subplots(3, 4)
+def plot_weights(w=None):
+    mymodel = tf.saved_model.load('model/cnn/')
+    #print(mymodel.weight1)
+    w = mymodel.weight1.numpy()
+    print(w.shape)
+    print(w[:,:,0,1])
+    w_min = np.min(w)
+    w_max = np.max(w)
+
+    fig, axes = plt.subplots(4, 8)
     fig.subplots_adjust(hspace=0.3, wspace=0.3)
 
     for i, ax in enumerate(axes.flat):
-        if i<10:
-            image = w[:, i].reshape(img_shape)
-            ax.set_xlabel("Weights: {0}".format(i))
+        if i<32:
+            image = w[:,: ,0,i].reshape([3,3])
+            ax.set_xlabel("filter: {0}".format(i))
             ax.imshow(image, vmin=w_min, vmax=w_max, cmap='seismic')
 
         ax.set_xticks([])
         ax.set_yticks([])
         
-    plt.savefig('result.pdf', dpi=600)
+    plt.savefig('weight.pdf', dpi=600)
 
+plot_weights()
