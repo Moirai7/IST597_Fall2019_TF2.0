@@ -251,6 +251,7 @@ def train():
    n_batches = 0
    acc = tf.metrics.Accuracy()
    loss_avg = tf.metrics.Mean()
+   start = time.time()
    for idx, (_x, _y) in train_dataset.enumerate():
      with tf.GradientTape() as tape:
        logits = mymodel(_x, dropout = dropout_prob_all)
@@ -271,6 +272,8 @@ def train():
         test_loss_results.append(l)
         test_accuracy_results.append(a)
      '''
+   end = time.time()
+   print(end-start)
    a,l = test(mymodel)
    test_loss_results.append(l)
    test_accuracy_results.append(a)
