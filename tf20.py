@@ -346,39 +346,20 @@ def test_img():
 #test_img()
 #Second plot weights 
 def plot_weights(w=None):
-    # Get the values for the weights from the TensorFlow variable.
-    #TO DO ####
-    
-    # Get the lowest and highest values for the weights.
-    # This is used to correct the colour intensity across
-    # the images so they can be compared with each other.
     w_min = None
-    #TO DO## obtains these value from W
     w_max = None
 
-    # Create figure with 3x4 sub-plots,
-    # where the last 2 sub-plots are unused.
     fig, axes = plt.subplots(3, 4)
     fig.subplots_adjust(hspace=0.3, wspace=0.3)
 
     for i, ax in enumerate(axes.flat):
-        # Only use the weights for the first 10 sub-plots.
         if i<10:
-            # Get the weights for the i'th digit and reshape it.
-            # Note that w.shape == (img_size_flat, 10)
             image = w[:, i].reshape(img_shape)
-
-            # Set the label for the sub-plot.
             ax.set_xlabel("Weights: {0}".format(i))
-
-            # Plot the image.
             ax.imshow(image, vmin=w_min, vmax=w_max, cmap='seismic')
 
-        # Remove ticks from each sub-plot.
         ax.set_xticks([])
         ax.set_yticks([])
         
-    # Ensure the plot is shown correctly with multiple plots
-    # in a single Notebook cell.
-    plt.show()
+    plt.savefig('result.pdf', dpi=600)
 
