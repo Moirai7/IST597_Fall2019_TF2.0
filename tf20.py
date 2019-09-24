@@ -14,7 +14,7 @@ learning_rate = 0.001
 batch_size = 1000
 buffer_size = 15000
 n_epochs = 120
-dropout_prob_all = 0.1#4
+dropout_prob_all = 0.0#4
 n_train = None
 n_test = None
 
@@ -244,7 +244,7 @@ def train():
   train_accuracy_results = []
   test_loss_results = []
   test_accuracy_results = []
-  mymodel = Vgg16()
+  mymodel = CNNs()#Vgg16()
   best = 0.0
   for i in range(n_epochs):
    total_loss = 0
