@@ -1,6 +1,13 @@
 """ 
 author:Lan Zhang
 """
+'''
+try:
+  # %tensorflow_version only exists in Colab.
+  %tensorflow_version 2.x
+except Exception:
+  pass
+'''
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
@@ -85,8 +92,8 @@ class Vgg16(tf.Module):
         conv = tf.nn.conv2d(bottom, filters, [1, 1, 1, 1], padding='SAME')
         conv_biases = self.trainable[name][1]
         layer = tf.nn.bias_add(conv, conv_biases)
-        if self.dropout_prob != 0.0:
-          layer = tf.nn.dropout(layer,self.dropout_prob)
+        #if self.dropout_prob != 0.0:
+        #  layer = tf.nn.dropout(layer,self.dropout_prob)
         return layer
 
   def max_pool(self,bottom, name):
@@ -199,8 +206,8 @@ class CNNs(tf.Module):
     batch_mean2, batch_var2 = tf.nn.moments(layer,[0])
     layer = tf.nn.batch_normalization(layer,batch_mean2, batch_var2, beta, gamma, 1e-3)
     layer = tf.nn.relu(layer)
-    if self.dropout_prob != 0.0: 
-       layer = tf.nn.dropout(layer,self.dropout_prob)
+    #if self.dropout_prob != 0.0: 
+    #   layer = tf.nn.dropout(layer,self.dropout_prob)
     return layer
 
 
