@@ -18,11 +18,6 @@ dropout_prob = False
 n_train = None
 n_test = None
 
-# Step 1: Read in data
-#fmnist_folder = 'None'
-#Create dataset load function [Refer fashion mnist github page for util function]
-#Create train,validation,test split
-#train, val, test = utils.read_fmnist(fmnist_folder, flatten=True)
 (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.fashion_mnist.load_data()
 train_images = train_images.reshape( [60000,784])
 test_images = test_images.reshape( [10000,784])

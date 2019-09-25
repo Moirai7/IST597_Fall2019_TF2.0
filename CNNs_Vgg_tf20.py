@@ -22,19 +22,9 @@ batch_size = 1000
 buffer_size = 15000
 n_epochs = 120
 dropout_prob_all = 0.0#4
-n_train = None
-n_test = None
 
-# Step 1: Read in data
-#fmnist_folder = 'None'
-#Create dataset load function [Refer fashion mnist github page for util function]
-#Create train,validation,test split
-#train, val, test = utils.read_fmnist(fmnist_folder, flatten=True)
 train_data, test_data = tf.keras.datasets.fashion_mnist.load_data()
 
-# Step 2: Create datasets and iterator
-# create training Dataset and batch it
-# create testing Dataset and batch it
 train_images, train_labels = train_data
 test_images, test_labels = test_data
 
@@ -86,7 +76,7 @@ class Vgg16(tf.Module):
         self.trainable[name].append(tf.Variable(trainable=True,initial_value=tf.random.truncated_normal(vgg16[name], dtype=tf.float32, stddev=0.05), name=name+"/weights"))
         self.trainable[name].append(tf.Variable(initial_value=tf.constant(0.05, shape=vgg16[name][-1], dtype=tf.float32), trainable=True, name=name+"/biases"))
 
-  def conv_layer(self,bottom, name):
+  def create_conv_layer(self,bottom, name):
     with tf.name_scope(name):
         filters = self.trainable[name][0]
         conv = tf.nn.conv2d(bottom, filters, [1, 1, 1, 1], padding='SAME')
@@ -102,7 +92,7 @@ class Vgg16(tf.Module):
         relu = tf.nn.relu(layer)
         return relu
 
-  def fc_layer(self,bottom, name):
+  def create_output_layer(self,bottom, name):
     with tf.name_scope(name):
         shape = bottom.get_shape().as_list()
         k = 1
@@ -114,38 +104,38 @@ class Vgg16(tf.Module):
         return tf.nn.bias_add(tf.matmul(x, weight), bias)
 
   @tf.function(input_signature=[tf.TensorSpec(shape=[batch_size, 28, 28, 1], dtype=tf.float32), tf.TensorSpec(shape=None,dtype=tf.float32)])
-  def __call__(self, batch_x, dropout):
+  def __call__(self, input_x, dropout):
     self.dropout_prob = dropout
-    conv1_1 = self.conv_layer(batch_x, "conv1_1")
-    conv1_2 = self.conv_layer(conv1_1, "conv1_2")
+    conv1_1 = self.create_conv_layer(input_x, "conv1_1")
+    conv1_2 = self.create_conv_layer(conv1_1, "conv1_2")
     pool1 = self.max_pool(conv1_2, "pool1")
     
-    conv2_1 = self.conv_layer(pool1, "conv2_1")
-    conv2_2 = self.conv_layer(conv2_1, "conv2_2")
+    conv2_1 = self.create_conv_layer(pool1, "conv2_1")
+    conv2_2 = self.create_conv_layer(conv2_1, "conv2_2")
     pool2 = self.max_pool(conv2_2, "pool2")
 
-    conv3_1 = self.conv_layer(pool2, "conv3_1")
-    conv3_2 = self.conv_layer(conv3_1, "conv3_2")
-    conv3_3 = self.conv_layer(conv3_2, "conv3_3")
+    conv3_1 = self.create_conv_layer(pool2, "conv3_1")
+    conv3_2 = self.create_conv_layer(conv3_1, "conv3_2")
+    conv3_3 = self.create_conv_layer(conv3_2, "conv3_3")
     pool3 = self.max_pool(conv3_3, "pool3")
 
-    conv4_1 = self.conv_layer(pool3, "conv4_1")
-    conv4_2 = self.conv_layer(conv4_1, "conv4_2")
-    conv4_3 = self.conv_layer(conv4_2, "conv4_3")
+    conv4_1 = self.create_conv_layer(pool3, "conv4_1")
+    conv4_2 = self.create_conv_layer(conv4_1, "conv4_2")
+    conv4_3 = self.create_conv_layer(conv4_2, "conv4_3")
     pool4 = self.max_pool(conv4_3, "pool4")
 
-    conv5_1 = self.conv_layer(pool4, "conv5_1")
-    conv5_2 = self.conv_layer(conv5_1, "conv5_2")
-    conv5_3 = self.conv_layer(conv5_2, "conv5_3")
+    conv5_1 = self.create_conv_layer(pool4, "conv5_1")
+    conv5_2 = self.create_conv_layer(conv5_1, "conv5_2")
+    conv5_3 = self.create_conv_layer(conv5_2, "conv5_3")
     pool5 = self.max_pool(conv5_3, "pool5")
 
-    fc6 = self.fc_layer(pool5, "fc6")
+    fc6 = self.create_output_layer(pool5, "fc6")
     relu6 = tf.nn.relu(fc6)
 
-    fc7 = self.fc_layer(relu6, "fc7")
+    fc7 = self.create_output_layer(relu6, "fc7")
     relu7 = tf.nn.relu(fc7)
 
-    fc8 = self.fc_layer(relu7, "fc8")
+    fc8 = self.create_output_layer(relu7, "fc8")
     return fc8
 
 class CNNs(tf.Module):
@@ -154,7 +144,7 @@ class CNNs(tf.Module):
     conv1_filter_size = 3
     conv2_filter_size = 3
     conv3_filter_size = 3
-    fc_layer_size = 128
+    output_layer_size = 128
     num_filters1 = 32
     num_filters2 = 64
     num_filters3 = 128
@@ -171,21 +161,21 @@ class CNNs(tf.Module):
     self.biases3 = tf.Variable(tf.constant(.05, shape=[num_filters3]), trainable=True)
     self.beta3 = tf.Variable(tf.constant(0.0, shape=[num_filters3]),name='beta', trainable=True)
     self.gamma3 = tf.Variable(tf.constant(1.0, shape=[num_filters3]),name='gamma', trainable=True)
-    self.weight4 = tf.Variable(tf.random.truncated_normal([features,fc_layer_size]), trainable=True)
-    self.biases4 = tf.Variable(tf.constant(.05, shape=[fc_layer_size]), trainable=True)
-    self.weight5 = tf.Variable(tf.random.truncated_normal([fc_layer_size,10]), trainable=True)
+    self.weight4 = tf.Variable(tf.random.truncated_normal([features,output_layer_size]), trainable=True)
+    self.biases4 = tf.Variable(tf.constant(.05, shape=[output_layer_size]), trainable=True)
+    self.weight5 = tf.Variable(tf.random.truncated_normal([output_layer_size,10]), trainable=True)
     self.biases5 = tf.Variable(tf.constant(.05, shape=[10]), trainable=True)
 
   @tf.function(input_signature=[tf.TensorSpec(shape=[batch_size, 28, 28, 1], dtype=tf.float32), tf.TensorSpec(shape=None,dtype=tf.float32)])
-  def __call__(self, batch_x, dropout):
+  def __call__(self, input_x, dropout):
     self.dropout_prob = dropout
-    layer = self.conv_layer(batch_x, self.weight1, self.biases1,self.beta1, self.gamma1)
+    layer = self.create_conv_layer(input_x, self.weight1, self.biases1,self.beta1, self.gamma1)
 
-    layer = self.conv_layer(layer, self.weight2, self.biases2,self.beta2, self.gamma2)
+    layer = self.create_conv_layer(layer, self.weight2, self.biases2,self.beta2, self.gamma2)
 
-    layer = self.conv_layer(layer, self.weight3, self.biases3,self.beta3, self.gamma3)
+    layer = self.create_conv_layer(layer, self.weight3, self.biases3,self.beta3, self.gamma3)
 
-    layer_flat = self.create_flatten_layer(layer)
+    layer_flat = self.create_output_layer(layer)
 
     layer = tf.matmul(layer_flat, self.weight4) + self.biases4
     layer = tf.nn.relu(layer)
@@ -193,14 +183,14 @@ class CNNs(tf.Module):
     layer = tf.matmul(layer, self.weight5) + self.biases5
     return layer
 
-  def create_flatten_layer(self, layer):
+  def create_output_layer(self, layer):
     layer_shape = layer.get_shape()
     num_features = layer_shape[1:4].num_elements()
     layer = tf.reshape(layer, [-1, num_features])
     return layer
 
-  def conv_layer(self,batch_x,weight,biases,beta,gamma):
-    layer = tf.nn.conv2d(batch_x, weight, strides=[1,1,1,1], padding='SAME')
+  def create_conv_layer(self,input_x,weight,biases,beta,gamma):
+    layer = tf.nn.conv2d(input_x, weight, strides=[1,1,1,1], padding='SAME')
     layer += biases
     layer = tf.nn.max_pool2d(layer,[1,2,2,1],[1,2,2,1],padding='SAME')
     batch_mean2, batch_var2 = tf.nn.moments(layer,[0])

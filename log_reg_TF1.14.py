@@ -7,17 +7,15 @@ assert tf.executing_eagerly()
 
 import numpy as np
 from sklearn.metrics import confusion_matrix
-from tensorflow.examples.tutorials.mnist import input_data
 
 print(tf.__version__)
 
 batch_size = 1000
 buffer_size = 15000
 n_epochs = 100
-'''define the images information'''
-img_size = 28
-img_size_flat = img_size * img_size
-img_shape = (img_size, img_size)
+sz = 28
+sz_flat = sz * sz
+img_shape = (sz, sz)
 num_classes = 10
 
 train_data, test_data = tf.keras.datasets.fashion_mnist.load_data()
@@ -26,8 +24,8 @@ test_images, test_labels = test_data
 
 train_labels = tf.cast(train_labels, dtype=tf.int64)
 test_labels = tf.cast(test_labels, dtype=tf.int64)
-train_images = tf.reshape(tf.cast(train_images/255., tf.float32),[-1,img_size_flat])
-test_images = tf.reshape(tf.cast(test_images/255., tf.float32),[-1,img_size_flat])
+train_images = tf.reshape(tf.cast(train_images/255., tf.float32),[-1,sz_flat])
+test_images = tf.reshape(tf.cast(test_images/255., tf.float32),[-1,sz_flat])
 
 train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels))
 test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels))
@@ -36,25 +34,19 @@ test_dataset = test_dataset.shuffle(buffer_size).batch(batch_size)
 
 
 def plot_images(images, cls_true, cls_pred = None):
-    #assert len(images) == len(cls_true) == 9  # only show 9 images
     fig, axes = plt.subplots(nrows=3, ncols=3)
     for i, ax in enumerate(axes.flat):
-        ax.imshow(images[i].numpy().reshape(img_shape), cmap="binary")  # binary means black_white image
-        # show the true and pred values
+        ax.imshow(images[i].numpy().reshape(img_shape), cmap="binary")
         if cls_pred is None:
             xlabel = "True: {0}".format(cls_true[i])
         else:
             xlabel = "True: {0},Pred: {1}".format(cls_true[i],cls_pred[i])
         ax.set_xlabel(xlabel)
-        ax.set_xticks([])  # remove the ticks
+        ax.set_xticks([])
         ax.set_yticks([])
     plt.show()
 
-#images = test_images[0:9]
-#cls_true = test_labels[0:9]
-#plot_images(images, cls_true)
-
-weights = tf.Variable(tf.zeros([img_size_flat, num_classes]),trainable=True)  # img_size_flat*num_classes
+weights = tf.Variable(tf.zeros([sz_flat, num_classes]),trainable=True)
 biases = tf.Variable(tf.zeros([num_classes]),trainable=True)
 
 def model(X):
@@ -79,8 +71,7 @@ def optimize():
             loss = cal_loss(logits, _y)
           gradients = tape.gradient(loss, [weights,biases])
           optimizer.apply_gradients(zip(gradients, [weights,biases]))      
-
-'''define a function to print the accuracy'''    
+   
 def print_accuracy():
     logits = model(test_images)
     y_pred = tf.nn.softmax(logits)
@@ -109,49 +100,39 @@ mpl.rcParams['figure.dpi'] = 600
 optimize()
 print_accuracy()
 plot_weights()
-#print_confusion_martix()
 
 
 from sklearn.manifold import TSNE
 import seaborn as sns
 import matplotlib.patheffects as PathEffects
-def fashion_scatter(x, colors):
-    # choose a color palette with seaborn.
-    num_classes = len(np.unique(colors))
+def scatter(x, label):
+    num_classes = len(np.unique(label))
     palette = np.array(sns.color_palette("hls", num_classes))
 
-    # create a scatter plot.
     f = plt.figure(figsize=(8, 8))
-    ax = plt.subplot(aspect='equal')
-    sc = ax.scatter(x[:,0], x[:,1], lw=0, s=40, c=palette[colors.astype(np.int)])
+    axs = plt.subplot(aspect='equal')
+    _ = axs.scatter(x[:,0], x[:,1], lw=0, s=10, c=palette[label.astype(np.int)])
+    axs.axis('off')
+    axs.axis('tight')
     plt.xlim(-25, 25)
     plt.ylim(-25, 25)
-    ax.axis('off')
-    ax.axis('tight')
-
-    # add the labels for each digit corresponding to the label
     txts = []
 
     for i in range(num_classes):
-
-        # Position of each label at median of data points.
-
-        xtext, ytext = np.median(x[colors == i, :], axis=0)
-        txt = ax.text(xtext, ytext, str(i), fontsize=24)
+        xtext, ytext = np.median(x[label == i, :], axis=0)
+        txt = axs.text(xtext, ytext, str(i), fontsize=20)
         txt.set_path_effects([
             PathEffects.Stroke(linewidth=5, foreground="w"),
             PathEffects.Normal()])
         txts.append(txt)
 
-    return f, ax, sc, txts
-
 
 def clustering():
   w = weights.numpy().T
-  label = np.concatenate(np.array([ np.ones(img_size_flat)*i for i in range(10)]))
+  label = np.concatenate(np.array([ np.ones(sz_flat)*i for i in range(10)]))
   out = TSNE(n_components=2).fit_transform(np.concatenate(w).reshape(-1,1))
   print(out)
-  fashion_scatter(out,label)
+  scatter(out,label)
      
 
           
