@@ -404,6 +404,8 @@ Figure \ref{adam} is the loss and accuracy of train dataset and test dataset usi
 \subsection{Train for longer epochs}
 Figure \ref{over} is the result if I train the model for more epochs. At first, I thought the decreasing accuracy on test dataset means the model is already overfitting. But with longer epochs, it turns out the model just fall into local minima. And the accuracy can reach 90.67\% after 120 epochs.
 
+Figure \ref{vgg16} is the result if I train the Vgg model for more epochs. This model is better than CNNs because it can converge faster and generalize better. After 20 epochs, it has gotten a stable result. It can get achieve 93.26\% within 120 epochs.
+
 \begin{figure}[!h]
 \subfigure[train loss ]{
   \begin{minipage}{0.21\linewidth}
@@ -611,7 +613,7 @@ I tested training time with GPU and CPU on Calab. The approximate running time o
 Unlike problem 1, with the model CNNs, the training time on CPU per epoch is almost 20 times than training time on GPU. 
 
 \subsection{Overfit}
-The CNNs model is not overfitting according to Figure \ref{over}. Normally, I'll run a model for a few epochs. If the accuracy(loss) on train dataset is very desired while those measures on the test dataset are still unreasonable, I assume the model overfits. For example, it would be a red signal if the model has 99\% accuracy on the training dataset but only 50\% accuracy on the test dataset. I'll use dropout and regularization to prevent the model overfit.
+The CNNs model and Vgg16 model are not overfit according to Figure \ref{over} and  Figure \ref{vgg16}.  Normally, I'll run a model for a few epochs. If the accuracy(loss) on train dataset is very desired while those measures on the test dataset are still unreasonable, I assume the model overfits. For example, it would be a red signal if the model has 99\% accuracy on the training dataset but only 50\% accuracy on the test dataset. I'll use dropout and regularization to prevent the model overfit.
 
 
 \subsection{Performance compared with other algorithms}
