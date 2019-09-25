@@ -1,6 +1,13 @@
 """ 
 author:Lan Zhang
 """
+'''
+try:
+  # %tensorflow_version only exists in Colab.
+  %tensorflow_version 2.x
+except Exception:
+  pass
+'''
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
@@ -12,9 +19,9 @@ from sklearn.metrics import confusion_matrix
 # Define paramaters for the model
 learning_rate = 0.001
 batch_size = 1000
-buffer_size = 10000
-n_epochs = 1000
-dropout_prob = False
+buffer_size = 15000
+n_epochs = 120
+dropout_prob_all = 0.0#4
 n_train = None
 n_test = None
 
@@ -29,33 +36,31 @@ train_data, test_data = tf.keras.datasets.fashion_mnist.load_data()
 # create training Dataset and batch it
 # create testing Dataset and batch it
 train_images, train_labels = train_data
+test_images, test_labels = test_data
+
+'''
+X = np.concatenate((train_data[0],test_data[0]))
+y = np.concatenate((train_data[1],test_data[1]))
+
+from sklearn.model_selection import train_test_split
+train_images,test_images,train_labels,test_labels = train_test_split(X, y, test_size=0.4, random_state=2612)
+'''
+
 train_images = tf.expand_dims(tf.cast(train_images, dtype=tf.float32),-1)
 train_labels = tf.cast(train_labels, dtype=tf.int64)
 train_images /= 255.
 
-test_images, test_labels = test_data
 test_images = tf.expand_dims(tf.cast(test_images, dtype=tf.float32),-1)
 test_labels = tf.cast(test_labels, dtype=tf.int64)
 test_images /= 255.
 train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels))
 test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels))
-train_dataset = train_dataset.shuffle(buffer_size).batch(batch_size)
-test_dataset = test_dataset.shuffle(buffer_size).batch(batch_size)
+train_dataset = train_dataset.shuffle(buffer_size).batch(batch_size,drop_remainder=True)
+test_dataset = test_dataset.shuffle(buffer_size).batch(batch_size,drop_remainder=True)
 
 # create one iterator and initialize it with different datasets
 #features, label = iter(train_dataset).next()
-
 #img_test, label_test = next(iter(test_dataset))
-# Step 3: create weights and bias
-# w is initialized to random variables with mean of 0, stddev of 0.01
-# b is initialized to 0
-# shape of w depends on the dimension of X and Y so that Y = tf.matmul(X, w)
-# shape of b depends on Y
-#w, b = tf.Variable(initializer = tf.initializers.RandomUniform(0, 0.01), shape=None), None
-#############################
-########## TO DO ############
-#############################
-
 
 # Step 4: build model
 # the model that returns the logits.
@@ -86,8 +91,10 @@ class Vgg16(tf.Module):
         filters = self.trainable[name][0]
         conv = tf.nn.conv2d(bottom, filters, [1, 1, 1, 1], padding='SAME')
         conv_biases = self.trainable[name][1]
-        bias = tf.nn.bias_add(conv, conv_biases)
-        return bias
+        layer = tf.nn.bias_add(conv, conv_biases)
+        #if self.dropout_prob != 0.0:
+        #  layer = tf.nn.dropout(layer,self.dropout_prob)
+        return layer
 
   def max_pool(self,bottom, name):
     with tf.name_scope(name):
@@ -106,8 +113,9 @@ class Vgg16(tf.Module):
         bias = self.trainable[name][1]
         return tf.nn.bias_add(tf.matmul(x, weight), bias)
 
-  @tf.function(input_signature=[tf.TensorSpec(shape=[batch_size, 28, 28, 1], dtype=tf.float32)])
-  def __call__(self, batch_x):
+  @tf.function(input_signature=[tf.TensorSpec(shape=[batch_size, 28, 28, 1], dtype=tf.float32), tf.TensorSpec(shape=None,dtype=tf.float32)])
+  def __call__(self, batch_x, dropout):
+    self.dropout_prob = dropout
     conv1_1 = self.conv_layer(batch_x, "conv1_1")
     conv1_2 = self.conv_layer(conv1_1, "conv1_2")
     pool1 = self.max_pool(conv1_2, "pool1")
@@ -168,7 +176,9 @@ class CNNs(tf.Module):
     self.weight5 = tf.Variable(tf.random.truncated_normal([fc_layer_size,10]), trainable=True)
     self.biases5 = tf.Variable(tf.constant(.05, shape=[10]), trainable=True)
 
-  def __call__(self, batch_x):
+  @tf.function(input_signature=[tf.TensorSpec(shape=[batch_size, 28, 28, 1], dtype=tf.float32), tf.TensorSpec(shape=None,dtype=tf.float32)])
+  def __call__(self, batch_x, dropout):
+    self.dropout_prob = dropout
     layer = self.conv_layer(batch_x, self.weight1, self.biases1,self.beta1, self.gamma1)
 
     layer = self.conv_layer(layer, self.weight2, self.biases2,self.beta2, self.gamma2)
@@ -196,8 +206,8 @@ class CNNs(tf.Module):
     batch_mean2, batch_var2 = tf.nn.moments(layer,[0])
     layer = tf.nn.batch_normalization(layer,batch_mean2, batch_var2, beta, gamma, 1e-3)
     layer = tf.nn.relu(layer)
-    if dropout_prob:
-       layer = tf.nn.dropout(layer,dropout_prob)
+    #if self.dropout_prob != 0.0: 
+    #   layer = tf.nn.dropout(layer,self.dropout_prob)
     return layer
 
 
@@ -212,36 +222,46 @@ def cal_loss(logits, actual):
 # Step 6: define optimizer
 # using Adam Optimizer with pre-defined learning rate to minimize loss
 optimizer = tf.optimizers.Adam(learning_rate=learning_rate)
-
+#optimizer = tf.optimizers.Nadam(learning_rate=learning_rate)
+#optimizer = tf.optimizers.SGD(learning_rate=learning_rate, momentum=0.9)
+#optimizer = tf.optimizers.Adagrad(learning_rate=learning_rate)
 
 # Step 7: calculate accuracy with test set
 from sklearn.metrics import accuracy_score
+def predict(logits):
+   return tf.argmax(tf.nn.softmax(logits),1)
+
 def cal_acc(logits, label):
-   preds = tf.argmax(tf.nn.softmax(logits),1)
-   return accuracy_score(preds, label)
+   return accuracy_score(predict(logits), label)
 
 
 def test(mymodel):
    _accs = 0
-   for ids,(x,y) in test_dataset.enumerate():
-      logits = mymodel(x)
-      _accs+= cal_acc(logits, y)*batch_size
-   return _accs/buffer_size
+   logitsall = []
+   yall=[]
+   for ids,(_x,_y) in test_dataset.enumerate():
+      logits = mymodel(_x,dropout = 0.)
+      logitsall.extend(logits)
+      yall.extend(_y)
+   return cal_acc(logitsall, yall), tf.reduce_sum(cal_loss(logitsall, yall))
 
 #Step 8: train the model for n_epochs times
 def train():
   train_loss_results = []
   train_accuracy_results = []
-  mymodel = Vgg16()
+  test_loss_results = []
+  test_accuracy_results = []
+  mymodel = CNNs()#Vgg16()
   best = 0.0
   for i in range(n_epochs):
    total_loss = 0
    n_batches = 0
    acc = tf.metrics.Accuracy()
    loss_avg = tf.metrics.Mean()
+   start = time.time()
    for idx, (_x, _y) in train_dataset.enumerate():
      with tf.GradientTape() as tape:
-       logits = mymodel(_x)
+       logits = mymodel(_x, dropout = dropout_prob_all)
        loss = cal_loss(logits, _y)
      print(idx,tf.reduce_mean(loss),cal_acc(logits, _y))
      gradients = tape.gradient(loss, mymodel.trainable_variables)
@@ -249,24 +269,43 @@ def train():
      loss_avg(loss)
      acc(tf.argmax(tf.nn.softmax(logits),1), _y)
      ##test
+     '''
      if (idx % 9 == 0):
-        a = test(mymodel)
+        a,l = test(mymodel)
         if (a>=best):
-           tf.saved_model.save(mymodel, 'model/vgg16/')
+           tf.saved_model.save(mymodel, 'model/cnn/')
            best = a
         print(a)
-
+        test_loss_results.append(l)
+        test_accuracy_results.append(a)
+     '''
+   end = time.time()
+   print(end-start)
+   a,l = test(mymodel)
+   test_loss_results.append(l)
+   test_accuracy_results.append(a)
    train_loss_results.append(loss_avg.result())
    train_accuracy_results.append(acc.result())
    print("Epoch {:03d}: Loss: {:.3f}, Accuracy: {:.3%}".format(i,loss_avg.result(),acc.result()))
+  plot_loss(train_loss_results, 'train_loss')
+  plot_loss(test_loss_results, 'test_loss')
+  plot_loss(train_accuracy_results, 'train_acc')
+  plot_loss(test_accuracy_results, 'test_acc')
+  print(train_loss_results,test_loss_results,train_accuracy_results,test_accuracy_results)
+
+def plot_loss(loss, name):
+   plt.clf()
+   plt.plot(range(1,n_epochs+1), loss, 'darkseagreen')
+   plt.savefig(name+'.pdf', dpi=600)
 
 #Step 9: Get the Final test accuracy
 def test_all():
-   mymodel = tf.saved_model.load('model/vgg16/')
-   a = test(mymodel)
+   mymodel = tf.saved_model.load('model/cnn/')
+   a,l = test(mymodel)
    print(a)
 
-test_all()
+#train()
+#test_all()
 
 #Step 10: Helper function to plot images in 3*3 grid
 #You can change the function based on your input pipeline
@@ -280,7 +319,7 @@ def plot_images(images, y, yhat=None):
 
     for i, ax in enumerate(axes.flat):
         # Plot image.
-        ax.imshow(images[i].reshape(img_shape), cmap='binary')
+        ax.imshow(images[i], cmap='binary')#.reshape(img_shape), cmap='binary')
 
         # Show true and predicted classes.
         if yhat is None:
@@ -293,54 +332,40 @@ def plot_images(images, y, yhat=None):
         # Remove ticks from the plot.
         ax.set_xticks([])
         ax.set_yticks([])
-    plt.show()
+    plt.savefig('result.pdf', dpi=600)
 
 #Get image from test set 
-images = test_data[0:9]
+def test_img():
+   mymodel = tf.saved_model.load('model/cnn/')
+   logits = mymodel(test_images[0:batch_size])
+   test_image = tf.squeeze(test_images, -1).numpy()
+   images = test_image[0:9]
+   y = test_labels[0:9].numpy()
+   plot_images(images=images, y=y, yhat=predict(logits)[0:9])
 
-# Get the true classes for those images.
-y = test_class[0:9]
-
-# Plot the images and labels using our helper-function above.
-plot_images(images=images, y=y)
-
-
-#Second plot weights 
+#test_img()
 
 def plot_weights(w=None):
-    # Get the values for the weights from the TensorFlow variable.
-    #TO DO ####
-    
-    # Get the lowest and highest values for the weights.
-    # This is used to correct the colour intensity across
-    # the images so they can be compared with each other.
-    w_min = None
-    #TO DO## obtains these value from W
-    w_max = None
+    mymodel = tf.saved_model.load('model/cnn/')
+    #print(mymodel.weight1)
+    w = mymodel.weight1.numpy()
+    print(w.shape)
+    print(w[:,:,0,1])
+    w_min = np.min(w)
+    w_max = np.max(w)
 
-    # Create figure with 3x4 sub-plots,
-    # where the last 2 sub-plots are unused.
-    fig, axes = plt.subplots(3, 4)
+    fig, axes = plt.subplots(4, 8)
     fig.subplots_adjust(hspace=0.3, wspace=0.3)
 
     for i, ax in enumerate(axes.flat):
-        # Only use the weights for the first 10 sub-plots.
-        if i<10:
-            # Get the weights for the i'th digit and reshape it.
-            # Note that w.shape == (img_size_flat, 10)
-            image = w[:, i].reshape(img_shape)
-
-            # Set the label for the sub-plot.
-            ax.set_xlabel("Weights: {0}".format(i))
-
-            # Plot the image.
+        if i<32:
+            image = w[:,: ,0,i].reshape([3,3])
+            ax.set_xlabel("filter: {0}".format(i))
             ax.imshow(image, vmin=w_min, vmax=w_max, cmap='seismic')
 
-        # Remove ticks from each sub-plot.
         ax.set_xticks([])
         ax.set_yticks([])
         
-    # Ensure the plot is shown correctly with multiple plots
-    # in a single Notebook cell.
-    plt.show()
+    plt.savefig('weight.pdf', dpi=600)
 
+plot_weights()
