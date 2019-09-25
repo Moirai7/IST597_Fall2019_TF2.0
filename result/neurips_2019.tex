@@ -438,6 +438,38 @@ Figure \ref{vgg16} is the result if I train the Vgg model for more epochs. This 
 \label{over}
 \end{figure}
 
+\begin{figure}[!h]
+\subfigure[train loss ]{
+  \begin{minipage}{0.21\linewidth}
+  \centering
+  \includegraphics[scale=0.23]{imgs/train_loss_vgg.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[train accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/train_acc_vgg.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test loss ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_loss_vgg.pdf}
+  \end{minipage}
+}
+\quad
+\subfigure[test accuracy ]{
+\begin{minipage}{0.21\linewidth}
+\centering
+  \includegraphics[scale=0.23]{imgs/test_acc_vgg.pdf}
+  \end{minipage}
+}
+\caption{More Training time(VGG16)}
+\label{vgg16}
+\end{figure}
+
 \subsection{Train/Val Split}
 Figure \ref{tv0.1} is the result(best accuracy is 86.57\% on test dataset) that the proportion of train dataset to test dataset is 9:1. Before this section, the ratio of train and test dataset is 6:1, and the result(best accuracy on the test dataset is 85.87\%) shows in Figure \ref{adam}. Figure \ref{tv0.3} is the result(best accuracy is 86.10\% on test dataset) that the proportion of train dataset to test dataset is 7:3.   Figure \ref{tv0.4} is the result(best accuracy is 84.72\% on test dataset) that the proportion of train dataset to test dataset is 6:4. 
 
