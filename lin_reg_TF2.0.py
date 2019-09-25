@@ -41,15 +41,13 @@ def squared_loss(y, y_predicted):
   return tf.reduce_mean(tf.square(y - y_predicted))
 
 def huber_loss(y, y_predicted, m=1.0):
-  """Huber loss."""
-  error = y - y_predicted
-  abs_error = tf.abs(error)
-  quadratic = tf.math.minimum(abs_error, m)
-  linear = abs_error - quadratic
+  abs_error = tf.abs(y - y_predicted)
+  quad = tf.math.minimum(abs_error, m)
+  linear = abs_error - quad
   losses = tf.math.add(
         tf.multiply(
-            tf.convert_to_tensor(0.5, dtype=quadratic.dtype),
-            tf.multiply(quadratic, quadratic)),
+            tf.convert_to_tensor(0.5, dtype=quad.dtype),
+            tf.multiply(quad, quad)),
         tf.multiply(m, linear))
   #return losses
   return tf.reduce_mean(losses)
