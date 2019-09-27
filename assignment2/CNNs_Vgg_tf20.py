@@ -294,7 +294,7 @@ def test_all():
    a,l = test(mymodel)
    print(a)
 
-#train()
+train()
 #test_all()
 
 #Step 10: Helper function to plot images in 3*3 grid
@@ -358,4 +358,4 @@ def plot_weights(w=None):
         
     plt.savefig('weight.pdf', dpi=600)
 
-plot_weights()
+#plot_weights()
