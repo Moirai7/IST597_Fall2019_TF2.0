@@ -15,47 +15,140 @@ except Exception:
   pass
 
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
+os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
 
 import numpy as np
 import tensorflow as tf
 import time
 import matplotlib.pyplot as plt
+import pandas as pd
 from sklearn.metrics import accuracy_score
 
-(taska_train_images, taska_train_labels), (taska_test_images, taska_test_labels) = tf.keras.datasets.fashion_mnist.load_data()
-
 num_tasks_to_run = 10
-
-num_epochs_per_task = 10
+num_epochs_per_task = 20
 
 learning_rate = 0.001
-batch_size = 100
+batch_size = 10000
 image_sz = 28
 size_input = image_sz * image_sz
-size_hidden = 128
+size_hidden = 256
 size_output = 10
+
+(taska_train_images, taska_train_labels), (taska_test_images, taska_test_labels) = tf.keras.datasets.mnist.load_data()
+
+'''
+#different categories
+train_splits = pd.DataFrame(zip(taska_train_labels, taska_train_images.reshape(-1,size_input)))
+train_splits[1] = train_splits[1]/255.
+train_splits = train_splits.sort_values(by=[0])
+test_splits = pd.DataFrame(zip(taska_test_labels, taska_test_images.reshape(-1,size_input)))
+test_splits[1] = test_splits[1]/255.
+test_splits = test_splits.sort_values(by=[0])
+'''
+
+'''
 
 taska_train_images = tf.reshape(tf.cast(taska_train_images, dtype=tf.float32),[-1, size_input])
 taska_train_labels = tf.cast(taska_train_labels, dtype=tf.int64)
-taska_train_images /= 255.
-
+taska_train_labels /= 255.
 
 taska_test_images = tf.reshape(tf.cast(taska_test_images, dtype=tf.float32),[-1, size_input])
 taska_test_labels = tf.cast(taska_test_labels, dtype=tf.int64)
-taska_test_images /= 255.
-taska_test_ds = tf.data.Dataset.from_tensor_slices((taska_test_images, taska_test_labels)).batch(batch_size,drop_remainder=True)
+taska_test_labels /= 255.
+
+#new task
+(taskb_train_images, taskb_train_labels), (taskb_test_images, taskb_test_labels) = tf.keras.datasets.fashion_mnist.load_data()
+taskb_train_images = tf.reshape(tf.cast(taskb_train_images, dtype=tf.float32),[-1, size_input])
+taskb_train_labels = tf.cast(taskb_train_labels, dtype=tf.int64)
+taskb_train_images /= 255.
+
+
+taskb_test_images = tf.reshape(tf.cast(taskb_test_images, dtype=tf.float32),[-1, size_input])
+taskb_test_labels = tf.cast(taskb_test_labels, dtype=tf.int64)
+taskb_test_images /= 255.
+taskb_test_ds = tf.data.Dataset.from_tensor_slices((taskb_test_images, taskb_test_labels)).batch(batch_size,drop_remainder=True)
+'''
+
+def imgToTensor(img):
+  return tf.reshape(tf.cast(img, dtype=tf.float32),[-1, size_input])
+  
+taska_train_images = taska_train_images/255.
+taska_test_images = taska_test_images/255.
+taska_train_images = taska_train_images.reshape([-1, size_input])
+taska_test_images = taska_test_images.reshape([-1, size_input])
+
+# Generate the tasks specifications as a list of random permutations of the input pixels.
+task_permutation = []
+for task in range(num_tasks_to_run):
+	task_permutation.append(np.random.permutation(size_input))
+  
+split_train_img = [imgToTensor(taska_train_images)]
+split_test_img = [imgToTensor(taska_test_images)]
+for k in range(num_tasks_to_run):
+  split_train_img.append(imgToTensor(taska_train_images[:,task_permutation[k]]))
+  split_test_img.append(imgToTensor(taska_test_images[:,task_permutation[k]]))
+
+taska_train_labels = tf.cast(taska_train_labels, dtype=tf.int32)
+taska_test_labels = tf.cast(taska_test_labels, dtype=tf.int32)
+
+import matplotlib as mpl
+mpl.rcParams['figure.dpi'] = 600
+def plot_images(images, y, yhat=None):
+    assert len(images) == len(y) == 9
+    
+    # Create figure with 3x3 sub-plots.
+    fig, axes = plt.subplots(3, 3)
+    fig.subplots_adjust(hspace=0.3, wspace=0.3)
+
+    for i, ax in enumerate(axes.flat):
+        # Plot image.
+        ax.imshow(images[i].reshape(28,28), cmap='binary')
+
+        # Show true and predicted classes.
+        if yhat is None:
+            xlabel = "True: {0}".format(y[i])
+        else:
+            xlabel = "True: {0}, Pred: {1}".format(y[i], yhat[i])
+
+        #ax.set_xlabel(xlabel)
+        
+        # Remove ticks from the plot.
+        ax.set_xticks([])
+        ax.set_yticks([])
+    plt.show()
+    
+#plot_images(split_train_img[0][0:9].numpy(),[1]*9)
+#plot_images(split_train_img[1][0:9].numpy(),[1]*9)
 
 # Define class to build mlp model
+loss_func = 1
+optm = 1
+depth = 3
+dropout_prob = 0.
 class MLP(tf.Module):
   def __init__(self):
     self.device = 'gpu'
+    self._variables = []
     self.W1 = tf.Variable(tf.random.truncated_normal([size_input, size_hidden], stddev=0.05))
-    self.b1 = tf.Variable(tf.random.normal([1, size_hidden]))
+    self.b1 = tf.Variable(tf.random.truncated_normal([size_hidden]))
+    self._variables.append(self.W1)
+    self._variables.append(self.b1)
+    for i in range(depth-2):
+      W = tf.Variable(tf.random.truncated_normal([size_hidden, size_hidden], stddev=0.05))
+      b = tf.Variable(tf.random.truncated_normal([size_hidden]))
+      self._variables.append(W)
+      self._variables.append(b)
     self.W2 = tf.Variable(tf.random.truncated_normal([size_hidden, size_output], stddev=0.05))
-    self.b2 = tf.Variable(tf.random.normal([1, size_output]))
-    self.optimizer = tf.optimizers.Adam(learning_rate=learning_rate)
-    self._variables = [self.W1, self.W2, self.b1, self.b2]
+    self.b2 = tf.Variable(tf.random.truncated_normal([size_output]))
+    self._variables.append(self.W2)
+    self._variables.append(self.b2)
+    if optm == 1:
+      self.optimizer = tf.optimizers.Adam(learning_rate=learning_rate)
+    elif optm == 2:
+      self.optimizer = tf.optimizers.SGD(learning_rate=learning_rate, momentum=0.9)
+    else:
+      self.optimizer = tf.optimizers.RMSprop(learning_rate=learning_rate)
+    
 
   def forward(self, X):
     if self.device is not None:
@@ -67,19 +160,26 @@ class MLP(tf.Module):
     return self.y
 
   def loss(self, logits, y_true):
-    return tf.nn.sparse_softmax_cross_entropy_with_logits(logits = logits,labels = y_true)
+    if loss_func == 1:
+      return tf.nn.sparse_softmax_cross_entropy_with_logits(logits = logits,labels = y_true)
+    elif loss_func == 2:#l1
+      return tf.losses.mean_absolute_error(tf.nn.softmax(logits), tf.one_hot(y_true, size_output))
+    elif loss_func == 3:#l2
+      return tf.losses.MSE(tf.one_hot(y_true, size_output), tf.nn.softmax(logits))
+    elif loss_func == 4:#l1+l2
+      return tf.losses.mean_absolute_error(tf.one_hot(y_true, size_output), tf.nn.softmax(logits)) + tf.losses.MSE(tf.one_hot(y_true, size_output), tf.nn.softmax(logits))
   
-  def pred(self, logits, y_true):
+  def pred(self, logits):
     return tf.argmax(tf.nn.softmax(logits),1)
 
-  @tf.function(input_signature=[tf.TensorSpec(shape=[batch_size, size_input], dtype=tf.float32), tf.TensorSpec(shape=[batch_size], dtype=tf.int64),tf.TensorSpec(shape=None,dtype=tf.bool), tf.TensorSpec(shape=None,dtype=tf.float32)])
+  @tf.function(input_signature=[tf.TensorSpec(shape=[batch_size, size_input], dtype=tf.float32), tf.TensorSpec(shape=[batch_size], dtype=tf.int32),tf.TensorSpec(shape=None,dtype=tf.bool), tf.TensorSpec(shape=None,dtype=tf.float32)])
   def __call__(self, X_train, y_train, train, dropout):
     self.dropout = dropout
     
     with tf.GradientTape() as tape:
       logits = self.forward(X_train)
       current_loss = self.loss(logits, y_train)
-      pred = self.pred(logits, y_train)
+      pred = self.pred(logits)
     
     def cal_grad():
       grads = tape.gradient(current_loss, self._variables)
@@ -92,67 +192,301 @@ class MLP(tf.Module):
     return tf.cond(train, true_fn = cal_grad, false_fn = cal_not_grad)
 
   def compute_output(self, X):
-    # Compute values in hidden layer
     what = tf.matmul(X, self.W1) + self.b1
-    hhat = tf.nn.relu(what)
+    X = tf.nn.relu(what)
+    X = tf.cond(self.dropout != 0., lambda: tf.nn.dropout(X,self.dropout), lambda: X)
+    for i in range(1, depth-1):
+      # Compute values in hidden layer
+      what = tf.matmul(X, self._variables[i*2]) + self._variables[i*2+1]
+      X = tf.nn.relu(what)
+      X = tf.cond(self.dropout != 0., lambda: tf.nn.dropout(X,self.dropout), lambda: X)
     # Compute output
-    output = tf.matmul(hhat, self.W2) + self.b2
+    output = tf.matmul(X, self.W2) + self.b2
+    output = tf.cond(self.dropout != 0., lambda: tf.nn.dropout(output,self.dropout), lambda: output)
     return output
 
-def test():
-   _model = tf.saved_model.load('models/')
-   acc_avg = tf.metrics.Accuracy()
-   loss_avg = tf.metrics.Mean()
-   for ids,(_x,_y) in taska_test_ds.enumerate():
+def test(img, lab, path):
+    _model = tf.saved_model.load(path)
+    acc_avg = tf.metrics.Accuracy()
+    loss_avg = tf.metrics.Mean()
+    test_ds = tf.data.Dataset.from_tensor_slices((img, lab)).shuffle(1000, seed=2612).batch(batch_size,drop_remainder=True)
+    for ids,(_x,_y) in test_ds.enumerate():
       logits,loss,pred = _model(_x, _y, False, dropout = 0.)
       loss_avg(loss)
       acc_avg(pred, _y)
-   return loss_avg.result(), acc_avg.result()
+    return loss_avg.result(), acc_avg.result()
 
-def plot_loss(loss, name):
-   plt.clf()
-   w_min = np.min(loss)
-   w_max = np.max(loss)
-   print(w_min)
-   plt.plot(range(1,num_epochs_per_task+1), loss, 'darkseagreen')
-   plt.ylim([w_min,w_max])
-   plt.show()
-   #plt.savefig(name+'.pdf', dpi=600)
+def plot_loss(loss, name, epochs):
+  plt.clf()
+  w_min = np.min(loss)
+  w_max = np.max(loss)
+  plt.plot(range(1,epochs+1), loss, 'darkseagreen')
+  plt.ylim([w_min,w_max])
+  plt.show()
+  #plt.savefig(name+'.pdf', dpi=600)
 
 # Initialize model using CPU
-def train():
-  mlp_on_cpu = MLP()
-
+def train(train_images, train_labels, test_img, test_lab, path, epochs = num_epochs_per_task):
+  if tf.saved_model.contains_saved_model(path):
+    print('load model:' + path)
+    mlp_on_cpu = tf.saved_model.load(path)#MLP()
+  else:
+    print('create new model')
+    mlp_on_cpu = MLP()
   time_start = time.time()
   train_loss_results = []
   train_accuracy_results = []
   test_loss_results = []
   test_accuracy_results = []
-  for epoch in range(num_epochs_per_task):
-    train_ds = tf.data.Dataset.from_tensor_slices((taska_train_images, taska_train_labels)).shuffle(1000, seed=epoch*(2612)).batch(batch_size,drop_remainder=True)
+  for epoch in range(epochs):
+    train_ds = tf.data.Dataset.from_tensor_slices((train_images, train_labels)).shuffle(1000, seed=epoch*(2612)).batch(batch_size,drop_remainder=True)
     acc_avg = tf.metrics.Accuracy()
     loss_avg = tf.metrics.Mean()
     for inputs, outputs in train_ds:
-      logits,loss,pred = mlp_on_cpu(inputs, outputs, True ,0.)
+      logits,loss,pred = mlp_on_cpu(inputs, outputs, True ,dropout_prob)
       loss_avg(loss)
       acc_avg(pred, outputs)
-    print('Number of Epoch = {} - Average MSE:= {:.10f} - ACC:={:.4f}'.format(epoch + 1, loss_avg.result() / taska_train_images.shape[0], acc_avg.result()))
-    l, a = test()
-    test_loss_results.append(l)
-    test_accuracy_results.append(a)
-    train_loss_results.append(loss_avg.result())
-    train_accuracy_results.append(acc_avg.result())
-  plot_loss(train_loss_results, 'train_loss')
-  plot_loss(test_loss_results, 'test_loss')
-  plot_loss(train_accuracy_results, 'train_acc')
-  plot_loss(test_accuracy_results, 'test_acc')
-  print(train_loss_results,test_loss_results,train_accuracy_results,test_accuracy_results)  
+    #tf.saved_model.save(mlp_on_cpu, path)
+    #l, a = test(test_img, test_lab, path)
+    #print('Number of Epoch = {} - Average MSE:= {:.10f} - ACC:={:.4f}; TEST Loss:={:.10f} - ACC:={:.4f}'.format(
+    #    epoch + 1, loss_avg.result() / train_images.shape[0], acc_avg.result(), l, a))
+    #test_loss_results.append(l)
+    #test_accuracy_results.append(a)
+    #train_loss_results.append(loss_avg.result())
+    #train_accuracy_results.append(acc_avg.result())
+  #plot_loss(train_loss_results, 'imgs/loss' + str(loss_func)+ '_task'+ _task +'_train_loss', epochs)
+  #plot_loss(test_loss_results, 'imgs/loss' + str(loss_func)+ '_task'+ _task +'_test_loss', epochs)
+  #plot_loss(train_accuracy_results, 'imgs/loss' + str(loss_func)+ '_task'+ _task +'_train_acc', epochs)
+  #plot_loss(test_accuracy_results, 'imgs/loss' + str(loss_func)+ '_task'+ _task +'_test_acc', epochs)
   time_taken = time.time() - time_start
-
-  tf.saved_model.save(mlp_on_cpu, 'models/')
+  tf.saved_model.save(mlp_on_cpu, path)
 
   print('\nTotal time taken (in seconds): {:.2f}'.format(time_taken))
 
-train()
+'''
+#different categories
+R = [np.zeros(10)  for i in range(10)]
+for k in range(10):
+  train_ds = train_splits[train_splits[0]==k]
+  images = tf.cast(train_ds[1], dtype = tf.float32)
+  labels = tf.cast(train_ds[0], dtype = tf.int64)
+  test_ds = test_splits[test_splits[0]==k]
+  test_img = tf.cast(test_ds[1], dtype = tf.float32)
+  test_lab = tf.cast(test_ds[0], dtype = tf.int64)
+  if k == 0:
+    train(images, labels, test_img, test_lab, 'models/task2/', 50)
+  else:
+    train(images, labels, test_img, test_lab, 'models/task2/', 20)
+    
+  
+  _, acc = test(test_img, test_lab,'models/task2/')
+  R[k][k] = acc
+  if k!=9:
+    test_ds = test_splits[test_splits[0]==k+1]
+    test_img = tf.cast(test_ds[1], dtype = tf.float32)
+    test_lab = tf.cast(test_ds[0], dtype = tf.int64)
+    _, acc = test(test_img, test_lab,'models/task2/')
+    R[k][k+1] = acc
+  print(R)
+'''
 
-test()
+'''
+train_img = []
+train_label = []
+for k in range(0,60000,6000):
+  train_img.append(taska_train_images[k:k+6000])
+  train_label.append(taska_train_labels[k:k+6000])
+test_img = []
+test_label = []  
+for k in range(0,10000,1000):
+  test_img.append(taska_test_images[k:k+1000])
+  test_label.append(taska_test_labels[k:k+1000])
+  
+R = [np.zeros(num_tasks_to_run)  for i in range(num_tasks_to_run)]
+for k in range(num_tasks_to_run):
+  if k == 0:
+    train(train_img[k], train_label[k], test_img[k], test_label[k], 'models/task0/', 50)
+  else:
+    train(train_img[k], train_label[k], test_img[k], test_label[k], 'models/task0/', 20)
+  _, acc = test(test_img[k], test_label[k],'models/task0/')
+  R[k][k] = acc
+  if k != 0:
+    _, acc = test(test_img[k-1], test_label[k-1],'models/task0/')
+    R[k][k-1] = acc
+  print(R)
+'''
+
+_task = 'lan'
+def experiment():
+  global _task
+  R = [np.zeros(num_tasks_to_run)  for i in range(num_tasks_to_run)]
+  for k in range(num_tasks_to_run):
+    _task = str(k)
+    if k == 0:
+      train(split_train_img[k], taska_train_labels, split_test_img[k], taska_test_labels, 'model/task/'+str(loss_func)+'/', 50)
+      _, acc = test(split_test_img[k], taska_test_labels,'model/task/'+str(loss_func)+'/')
+      R[k][k] = acc
+    else:
+      train(split_train_img[k], taska_train_labels, split_test_img[k], taska_test_labels, 'model/task/'+str(loss_func)+'/', 20)
+      for i in range(k+1):
+        _, acc = test(split_test_img[i], taska_test_labels,'model/task/'+str(loss_func)+'/')
+        R[k][i] = acc
+    print(R)
+    
+  G = np.zeros(num_tasks_to_run)
+  #G[0] = R[0][0]
+  for k in range(0, num_tasks_to_run):
+    _task = 'gen'+str(k)
+    train(split_train_img[k], taska_train_labels, split_test_img[k], taska_test_labels, 'model/task/'+str(loss_func)+'/gen'+str(k)+'/', 20)
+    _, acc = test(split_test_img[k], taska_test_labels,'model/task/'+str(loss_func)+'/gen'+str(k)+'/')
+    G[k] = acc
+    print(G)
+  return R, G
+
+def metrics_acc(R):
+  _sum = 0
+  for i in range(num_tasks_to_run):
+    _sum += R[num_tasks_to_run-1][i]
+    
+  return _sum/num_tasks_to_run
+
+def metrics_bwt(R):
+  _sum = 0
+  for i in range(num_tasks_to_run-1):
+    _sum += (R[num_tasks_to_run-1][i] - R[i][i])
+    
+  return _sum/(num_tasks_to_run-1)
+  
+  
+def metrics_cbwt(t, R):
+  _sum = 0
+  for i in range(t+1, num_tasks_to_run):
+    _sum += (R[i][t] - R[t][t]) 
+    
+  return _sum/(num_tasks_to_run-1-t) 
+  
+  
+def metrics_tbwt(R, G):
+  _sum = 0
+  for i in range(num_tasks_to_run-1):
+    _sum += (R[num_tasks_to_run-1][i] - G[i])
+  
+  return _sum/(num_tasks_to_run-1)
+
+## Loss func experiments
+for i in [1, 2, 3, 4]:
+  loss_func = i
+  R, G = experiment()
+  print(R, G)
+  print('acc: {:.10f}, bwt: {:.10f}, tbwt: {:.10f}'.format(metrics_acc(R), metrics_bwt(R), metrics_tbwt(R, G)))
+  for t in range(9):
+    print('cbwt {}: {:.10f}'.format(t, metrics_cbwt(t, R)))
+
+'''
+loss = 1
+R = [np.array([0.98390001, 0.        , 0.        , 0.        , 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), np.array([0.83230001, 0.9774    , 0.        , 0.        , 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), np.array([0.528     , 0.77569997, 0.9774    , 0.        , 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), np.array([0.39879999, 0.37909999, 0.85470003, 0.9738    , 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), np.array([0.27540001, 0.21969999, 0.53939998, 0.8563    , 0.97509998,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), np.array([0.2447    , 0.1531    , 0.39309999, 0.50870001, 0.84509999,
+       0.97130001, 0.        , 0.        , 0.        , 0.        ]), np.array([0.2191    , 0.17569999, 0.28150001, 0.28279999, 0.47760001,
+       0.77020001, 0.97189999, 0.        , 0.        , 0.        ]), np.array([0.2289    , 0.1789    , 0.27669999, 0.22220001, 0.3281    ,
+       0.50489998, 0.88700002, 0.9709    , 0.        , 0.        ]), np.array([0.14569999, 0.17839999, 0.14120001, 0.1452    , 0.2273    ,
+       0.2886    , 0.6523    , 0.83499998, 0.96960002, 0.        ]), np.array([0.1411    , 0.1083    , 0.1426    , 0.1238    , 0.14489999,
+       0.23909999, 0.44760001, 0.60769999, 0.77520001, 0.97149998])] 
+G = [0.98390001,0.97189999,0.97920001,0.97920001,0.97799999,0.98019999
+ ,0.9774 ,    0.98040003, 0.97320002 ,0.98110002]
+acc: 0.3701799981, bwt: -0.6712222240, tbwt: -0.6747888931
+cbwt 0: -0.6490111211
+cbwt 1: -0.7062875088
+cbwt 2: -0.6017999986
+cbwt 3: -0.6172999983
+cbwt 4: -0.5704999820
+cbwt 5: -0.5206000150
+cbwt 6: -0.3095999800
+cbwt 7: -0.2495500150
+cbwt 8: -0.1944000100
+'''
+
+'''
+loss = 2
+R = [np.array([0.9788, 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,
+       0.    , 0.    ]), np.array([0.91829997, 0.97189999, 0.        , 0.        , 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), np.array([0.77600002, 0.92140001, 0.97039998, 0.        , 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), np.array([0.6498    , 0.77200001, 0.92909998, 0.97079998, 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), np.array([0.3989    , 0.62080002, 0.7177    , 0.91710001, 0.9691    ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), np.array([0.45100001, 0.47830001, 0.53439999, 0.74650002, 0.91839999,
+       0.96439999, 0.        , 0.        , 0.        , 0.        ]), np.array([0.28940001, 0.3364    , 0.47839999, 0.4693    , 0.71689999,
+       0.93159997, 0.96390003, 0.        , 0.        , 0.        ]), np.array([0.20990001, 0.26660001, 0.294     , 0.23810001, 0.49939999,
+       0.8448    , 0.90469998, 0.9666    , 0.        , 0.        ]), np.array([0.2217    , 0.1789    , 0.2595    , 0.2481    , 0.50559998,
+       0.66070002, 0.78750002, 0.93910003, 0.96270001, 0.        ]), np.array([0.2437    , 0.21529999, 0.23469999, 0.2316    , 0.46599999,
+       0.56669998, 0.70920002, 0.82529998, 0.91329998, 0.96329999])]
+G = [0.9788,     0.97869998, 0.977,      0.97689998, 0.9774,     0.97280002,
+ 0.97390002, 0.97850001, 0.97619998, 0.97570002]
+acc: 0.5369099920, bwt: -0.4792000056, tbwt: -0.4871555622
+cbwt 0: -0.5167222200
+cbwt 1: -0.4981874838
+cbwt 2: -0.4778571300
+cbwt 3: -0.4956833067
+cbwt 4: -0.3478400120
+cbwt 5: -0.2134499975
+cbwt 6: -0.1634333567
+cbwt 7: -0.0843999950
+cbwt 8: -0.0494000300
+'''
+'''
+#loss = 3
+[array([0.97469997, 0.        , 0.        , 0.        , 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), array([0.80140001, 0.95609999, 0.        , 0.        , 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), array([0.5431    , 0.86989999, 0.95639998, 0.        , 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), array([0.56419998, 0.74919999, 0.89490002, 0.9551    , 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), array([0.43130001, 0.62169999, 0.66070002, 0.82020003, 0.96490002,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), array([0.2802    , 0.63330001, 0.50650001, 0.79610002, 0.86580002,
+       0.95990002, 0.        , 0.        , 0.        , 0.        ]), array([0.25740001, 0.55260003, 0.5108    , 0.72479999, 0.8154    ,
+       0.87690002, 0.95679998, 0.        , 0.        , 0.        ]), array([0.2481    , 0.4409    , 0.3906    , 0.60369998, 0.56720001,
+       0.78100002, 0.89020002, 0.96179998, 0.        , 0.        ]), array([0.2305    , 0.43889999, 0.40779999, 0.55839998, 0.54890001,
+       0.71030003, 0.8581    , 0.90710002, 0.95539999, 0.        ]), array([0.2071    , 0.48949999, 0.42359999, 0.54479998, 0.50400001,
+       0.67820001, 0.70810002, 0.81629997, 0.8955    , 0.95279998])] [0.94630003 0.94599998 0.9483     0.94529998 0.94569999 0.94499999
+ 0.93959999 0.94279999 0.94569999 0.94569999]
+acc: 0.6219899952, bwt: -0.3748888837, tbwt: -0.3597333299
+cbwt 0: -0.5787777503
+cbwt 1: -0.3565999903
+cbwt 2: -0.4142714015
+cbwt 3: -0.2804333369
+cbwt 4: -0.3046400070
+cbwt 5: -0.1983000040
+cbwt 6: -0.1379999717
+cbwt 7: -0.1000999808
+cbwt 8: -0.0598999858
+'''
+'''
+#loss = 4
+[array([0.96259999, 0.        , 0.        , 0.        , 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), array([0.88349998, 0.77160001, 0.        , 0.        , 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), array([0.80110002, 0.74250001, 0.85439998, 0.        , 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), array([0.66299999, 0.68019998, 0.84799999, 0.95249999, 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), array([0.58530003, 0.57499999, 0.69620001, 0.89920002, 0.95039999,
+       0.        , 0.        , 0.        , 0.        , 0.        ]), array([0.4786    , 0.5521    , 0.67479998, 0.79659998, 0.91320002,
+       0.95069999, 0.        , 0.        , 0.        , 0.        ]), array([0.29030001, 0.41690001, 0.54259998, 0.69459999, 0.83499998,
+       0.89429998, 0.95039999, 0.        , 0.        , 0.        ]), array([0.2296    , 0.3558    , 0.44589999, 0.62180001, 0.7525    ,
+       0.82609999, 0.92259997, 0.95370001, 0.        , 0.        ]), array([0.23999999, 0.2685    , 0.35960001, 0.58039999, 0.68519998,
+       0.7572    , 0.86260003, 0.8725    , 0.94959998, 0.        ]), array([0.2341    , 0.25099999, 0.3888    , 0.49090001, 0.48570001,
+       0.62709999, 0.75120002, 0.87870002, 0.91720003, 0.949     ])] [0.94160002 0.94199997 0.9386     0.94279999 0.93629998 0.93660003
+ 0.93559998 0.93290001 0.94220001 0.9418    ]
+acc: 0.5973700061, bwt: -0.3634666519, tbwt: -0.3804333260
+cbwt 0: -0.4730999917
+cbwt 1: -0.2913500108
+cbwt 2: -0.2892714143
+cbwt 3: -0.2719166527
+cbwt 4: -0.2160799980
+cbwt 5: -0.1745249927
+cbwt 6: -0.1049333215
+cbwt 7: -0.0780999959
+cbwt 8: -0.0323999524
+'''
+
+from google.colab import files
+
+!ls
+!rm model -fr
