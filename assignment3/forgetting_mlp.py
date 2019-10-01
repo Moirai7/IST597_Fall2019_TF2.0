@@ -14,6 +14,7 @@ try:
 except Exception:
   pass
 '''
+
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
 
@@ -120,7 +121,6 @@ def plot_images(images, y, yhat=None):
 #plot_images(split_train_img[0][0:9].numpy(),[1]*9)
 #plot_images(split_train_img[1][0:9].numpy(),[1]*9)
 
-# Define class to build mlp model
 loss_func = 1
 optm = 1
 depth = 3
@@ -246,14 +246,14 @@ def train(train_images, train_labels, test_img, test_lab, path, epochs = num_epo
       logits,loss,pred = mlp_on_cpu(inputs, outputs, True ,dropout_prob)
       loss_avg(loss)
       acc_avg(pred, outputs)
-    #tf.saved_model.save(mlp_on_cpu, path)
-    #l, a = test(test_img, test_lab, path)
-    #print('Number of Epoch = {} - Average MSE:= {:.10f} - ACC:={:.4f}; TEST Loss:={:.10f} - ACC:={:.4f}'.format(
-    #    epoch + 1, loss_avg.result() / train_images.shape[0], acc_avg.result(), l, a))
-    #test_loss_results.append(l)
-    #test_accuracy_results.append(a)
-    #train_loss_results.append(loss_avg.result())
-    #train_accuracy_results.append(acc_avg.result())
+    tf.saved_model.save(mlp_on_cpu, path)
+    l, a = test(test_img, test_lab, path)
+    print('Number of Epoch = {} - Average MSE:= {:.10f} - ACC:={:.4f}; TEST Loss:={:.10f} - ACC:={:.4f}'.format(
+        epoch + 1, loss_avg.result() / train_images.shape[0], acc_avg.result(), l, a))
+    test_loss_results.append(l)
+    test_accuracy_results.append(a)
+    train_loss_results.append(loss_avg.result())
+    train_accuracy_results.append(acc_avg.result())
   #plot_loss(train_loss_results, 'imgs/loss' + str(loss_func)+ '_task'+ _task +'_train_loss', epochs)
   #plot_loss(test_loss_results, 'imgs/loss' + str(loss_func)+ '_task'+ _task +'_test_loss', epochs)
   #plot_loss(train_accuracy_results, 'imgs/loss' + str(loss_func)+ '_task'+ _task +'_train_acc', epochs)
@@ -262,6 +262,7 @@ def train(train_images, train_labels, test_img, test_lab, path, epochs = num_epo
   tf.saved_model.save(mlp_on_cpu, path)
 
   print('\nTotal time taken (in seconds): {:.2f}'.format(time_taken))
+  return test_loss_results, test_accuracy_results, train_loss_results, train_accuracy_results
 
 '''
 #different categories
@@ -332,7 +333,7 @@ def experiment():
       for i in range(k+1):
         _, acc = test(split_test_img[i], taska_test_labels,'models/'+task_name+'/'+str(loss_func)+'/'+str(optm)+'/'+str(depth)+'/'+str(dropout_prob)+'/')
         R[k][i] = acc
-    print(R)
+    #print(R)
     
   G = np.zeros(num_tasks_to_run)
   #G[0] = R[0][0]
@@ -341,7 +342,7 @@ def experiment():
     train(split_train_img[k], taska_train_labels, split_test_img[k], taska_test_labels, 'models/'+task_name+'/'+str(loss_func)+'/'+str(optm)+'/'+str(depth)+'/'+str(dropout_prob)+'/gen'+str(k)+'/', 20)
     _, acc = test(split_test_img[k], taska_test_labels,'models/'+task_name+'/'+str(loss_func)+'/'+str(optm)+'/'+str(depth)+'/'+str(dropout_prob)+'/gen'+str(k)+'/')
     G[k] = acc
-    print(G)
+    #print(G)
   return R, G
 
 def metrics_acc(R):
@@ -439,3 +440,38 @@ for i in [1,2,3]:
   for t in range(9):
     print('cbwt {}: {:.10f}'.format(t, metrics_cbwt(t, R)))
 
+## validation
+loss_func = 1
+optm = 1
+depth = 3
+dropout_prob = 0.
+_task = 'lan'
+task_name = 'experiment5'
+all_loss_results = []
+all_accuracy_results = []
+def plot_experiment():
+  global _task
+  for k in range(num_tasks_to_run):
+    _task = str(k)
+    if k == 0:
+      test_loss_results, test_accuracy_results, _, _ = train(split_train_img[k], taska_train_labels, split_test_img[0], taska_test_labels, 'models/'+task_name+'/'+str(loss_func)+'/'+str(optm)+'/'+str(depth)+'/'+str(dropout_prob)+'/', 50)
+      all_loss_results.append(test_loss_results)
+      all_accuracy_results.append(test_accuracy_results)
+    else:
+      test_loss_results, test_accuracy_results, _, _ = train(split_train_img[k], taska_train_labels, split_test_img[0], taska_test_labels, 'models/'+task_name+'/'+str(loss_func)+'/'+str(optm)+'/'+str(depth)+'/'+str(dropout_prob)+'/', 20)
+      all_loss_results.append(test_loss_results)
+      all_accuracy_results.append(test_accuracy_results)
+
+plot_experiment()
+
+'''
+from google.colab import files
+
+!ls
+!rm models -fr
+'''
+
+all_loss_results2 = [j for i in all_loss_results for j in i ]
+plot_loss(all_loss_results2 ,'',230)
+all_accuracy_results2 = [j for i in all_accuracy_results for j in i ]
+plot_loss(all_accuracy_results2,'' ,230)
