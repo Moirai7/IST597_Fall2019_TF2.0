@@ -12,7 +12,7 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{subfigure}
-\title{Exeriese 2}
+\title{Exeriese 3}
 
 \author{%
   Lan Zhang\\
@@ -24,9 +24,9 @@
 
 \section{Problem 1}
 
-Solved on 09/30/2019. The seed I used in belowing experiments is 2612. 
+Solved on 09/30/2019. The seed I used in bellowing experiments is 2612. 
 
-I implmented ACC, BWT, TBWT and CBWT to compare the result with different factors, inculding loss function, dropout, network depth and optimizer. ACC measures mean performance through all tasks; BWT is the influence on task $T_i$ after the model trained on other tasks; TBWT set an idependent standard for different tasks and calculate the influence on task $T_i$ after training other tasks; CBWT examines a specific task's influence.
+I implemented ACC, BWT, TBWT, and CBWT to compare the result with different factors, including loss function, dropout, network depth, and optimizer. ACC measures mean performance through all tasks; BWT is the influence on task $T_i$ after the model trained on other tasks; TBWT set an independent standard for different tasks and calculate the influence on task $T_i$ after training other tasks; CBWT examines a specific task's influence.
 
 $$ACC = \frac{1}{T}\sum_{i=1}^TR_{T,i}$$
 $$BWT = \frac{1}{T-1}\sum_{i=1}^{T-1}R_{T,i}-R_{i,i}$$
@@ -34,7 +34,7 @@ $$TBWT = \frac{1}{T-1}\sum_{i=1}^{T-1}R_{T,i}-G_{i,i}$$
 $$CBWT(t) = \frac{1}{T-t}\sum_{i=t+1}^{T}R_{i,t}-R_{t,t}$$
 where $T$ is the total tasks in one experiment, $R_{i, j}$ is the performace(classification accuracy) of the model on task i after traning on task j, $G_{i, i}$ is the performance of a model only trained on task i.
 
-Each experiment has 10 tasks. I applied a fixed random permutation to the pixels to generate different images as new tasks. Figure \ref{permutation} is an example of permuating images.  
+Each experiment has 10 tasks. I applied a fixed random permutation to the pixels to generate different images as new tasks. Figure \ref{permutation} is an example of permutating images.  
 
 \begin{figure}[htbp]
 \centering
@@ -68,7 +68,7 @@ $$L1\_Loss(y, \hat{y}) = |\hat{y} - y|$$
 $$L2\_Loss(y, \hat{y}) = \sqrt{(\hat{y} - y)^2}$$
 $$Hybird\_Loss = (y, \hat{y}) =  L1\_Loss(y, \hat{y}) + L2\_Loss(y, \hat{y}) $$
 
-Figure \ref{loss} is the four matrix with different loss function. Obvisily, different loss functions influence the model on forgetting. L1 loss is better on resisting forgetting compared to other loss function s on this model.
+Figure \ref{loss} is the four matrix with different loss function. Obviously, different loss functions influence the model of forgetting. L1 loss is better on resisting forgetting compared to other loss function s on this model.
 
 \begin{figure}[htbp]
 \centering
@@ -77,9 +77,6 @@ Figure \ref{loss} is the four matrix with different loss function. Obvisily, dif
 \label{loss}
 \end{figure}
 
-\subsection{Dropout}
-I trid four dropout probablity(0.0, 0.2, 0.4, 0.6) in this experiment. Shown as Figure \ref{dropout}, dropout can reduce forgetting influence.
-
 \begin{figure}[htbp]
 \centering
 \includegraphics[scale=0.3]{img/DropoutProbablity.png}
@@ -87,8 +84,12 @@ I trid four dropout probablity(0.0, 0.2, 0.4, 0.6) in this experiment. Shown as 
 \label{dropout}
 \end{figure}
 
+\subsection{Dropout}
+I trid four dropout probablity(0.0, 0.2, 0.4, 0.6) in this experiment. Figure \ref{dropout} illustrates a large dropout probablity can reduce forgetting influence. That means if the model see more data on one task, it tends to forget more information after training on the future task.
+
+
 \subsection{Depth}
-I trid three models with different depth(2,3,4) in this experiment. Shown as Figure \ref{depth}, the more complex the model is, the larger informantion loss has.
+I tried three models with different depth(2,3,4) in this experiment. Shown in Figure \ref{depth}, the more complex the model is, the larger the information loss has. I think it is because the complexity of the model affects the information it learn. I think that one of the reasons we use Occam'S razor rule when we choose models. 
 
 \begin{figure}[htbp]
 \centering
@@ -98,7 +99,7 @@ I trid three models with different depth(2,3,4) in this experiment. Shown as Fig
 \end{figure}
 
 \subsection{Optimizer}
-I used three optimizer(Adam, SGD, RMSprop) with the same learning rate. Figur \ref{optimizer} is the result of this experiment. The model can't converge with SGD optimizer. It seems optimizer doesn't affect as much as network depth and dropout probablity on forgeting information.
+I used three optimizers (Adam, SGD, RMSprop) with the same learning rate. Figure \ref{optimizer} is the result of this experiment. The model can't converge with the SGD optimizer. It seems optimizer doesn't affect as much as network depth and dropout probability on forgetting information.
 
 \begin{figure}[htbp]
 \centering
@@ -108,7 +109,7 @@ I used three optimizer(Adam, SGD, RMSprop) with the same learning rate. Figur \r
 \end{figure}
 
 \subsection{Validation Results}
-Figure \ref{val} show the accuracy and loss on orignal test dataset during training 10 tasks. With more epoches on other tasks, the model is gradually forgeting information. The performance on orignal test dataset decrease sharply.
+Figure \ref{val} shows the accuracy and loss of the original test dataset during training 10 tasks. With more epochs on other tasks, the model is gradually forgetting information. The performance on original test dataset decreases sharply.
 
 
 \begin{figure}[htbp]
@@ -130,4 +131,5 @@ Figure \ref{val} show the accuracy and loss on orignal test dataset during train
 \caption{Validation Results}
 \label{val}
 \end{figure}
+
 \end{document}

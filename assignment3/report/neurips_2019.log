@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2019.9.12)  1 OCT 2019 15:39
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2019.9.12)  7 OCT 2019 14:04
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -852,70 +852,64 @@ File: img/LossFunction.png Graphic file (type png)
 Package pdftex.def Info: img/LossFunction.png used on input line 75.
 (pdftex.def)             Requested size: 329.13217pt x 259.27061pt.
 
-<img/DropoutProbablity.png, id=54, 1097.09875pt x 864.22874pt>
+<img/DropoutProbablity.png, id=53, 1097.09875pt x 864.22874pt>
 File: img/DropoutProbablity.png Graphic file (type png)
 
 <use img/DropoutProbablity.png>
-Package pdftex.def Info: img/DropoutProbablity.png used on input line 85.
+Package pdftex.def Info: img/DropoutProbablity.png used on input line 82.
 (pdftex.def)             Requested size: 329.13217pt x 259.27061pt.
 
 <img/Depth.png, id=56, 1097.09875pt x 864.22874pt>
 File: img/Depth.png Graphic file (type png)
  <use img/Depth.png>
-Package pdftex.def Info: img/Depth.png used on input line 95.
+Package pdftex.def Info: img/Depth.png used on input line 96.
 (pdftex.def)             Requested size: 329.13217pt x 259.27061pt.
 
 <img/Optimizer.png, id=58, 1097.09875pt x 864.22874pt>
 File: img/Optimizer.png Graphic file (type png)
  <use img/Optimizer.png>
-Package pdftex.def Info: img/Optimizer.png used on input line 105.
+Package pdftex.def Info: img/Optimizer.png used on input line 106.
 (pdftex.def)             Requested size: 329.13217pt x 259.27061pt.
 
-<img/loss.png, id=60, 364.2408pt x 249.8133pt>
+[2 <./img/LossFunction.png>] [3 <./img/DropoutProbablity.png> <./img/Depth.png>
+] <img/loss.png, id=74, 364.2408pt x 249.8133pt>
 File: img/loss.png Graphic file (type png)
  <use img/loss.png>
-Package pdftex.def Info: img/loss.png used on input line 121.
+Package pdftex.def Info: img/loss.png used on input line 122.
 (pdftex.def)             Requested size: 182.11995pt x 124.90633pt.
 
-Overfull \hbox (23.12839pt too wide) in paragraph at lines 121--121
+Overfull \hbox (23.12839pt too wide) in paragraph at lines 122--122
  [][] 
  []
 
-<img/acc.png, id=61, 373.8768pt x 249.8133pt>
+<img/acc.png, id=75, 373.8768pt x 249.8133pt>
 File: img/acc.png Graphic file (type png)
  <use img/acc.png>
-Package pdftex.def Info: img/acc.png used on input line 129.
+Package pdftex.def Info: img/acc.png used on input line 130.
 (pdftex.def)             Requested size: 186.93794pt x 124.90633pt.
 
-Overfull \hbox (27.94638pt too wide) in paragraph at lines 129--129
+Overfull \hbox (27.94638pt too wide) in paragraph at lines 130--130
  [][] 
  []
 
-[2 <./img/LossFunction.png>] [3 <./img/DropoutProbablity.png> <./img/Depth.png>
-]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 133.
- [4 <./img/Optimizer.png> <./img/loss.png> <./img/acc.png>]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 133.
-
-(./neurips_2019.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 133.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 133.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 135.
+[4 <./img/Optimizer.png> <./img/loss.png> <./img/acc.png>]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 135.
+ (./neurips_2019.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 135.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 135.
 Package rerunfilecheck Info: File `neurips_2019.out' has not changed.
 (rerunfilecheck)             Checksum: 920436D041EB42B4641D0D720BC20990;341.
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 133.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 135.
  ) 
 Here is how much of TeX's memory you used:
- 8895 strings out of 493029
- 130900 string characters out of 6136234
- 254662 words of memory out of 5000000
+ 8892 strings out of 493029
+ 130870 string characters out of 6136234
+ 253662 words of memory out of 5000000
  12236 multiletter control sequences out of 15000+600000
- 28351 words of font info for 65 fonts, out of 8000000 for 9000
+ 28221 words of font info for 63 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 31i,9n,35p,453b,359s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 31i,9n,35p,457b,359s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/share/texliv
 e/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texm
 f-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist
@@ -925,7 +919,7 @@ ublic/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/am
 sfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts
 /cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb><
 /usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb>
-Output written on neurips_2019.pdf (4 pages, 607975 bytes).
+Output written on neurips_2019.pdf (4 pages, 608499 bytes).
 PDF statistics:
  124 PDF objects out of 1000 (max. 8388607)
  92 compressed objects within 1 object stream

@@ -1,0 +1,55 @@
+option = {
+    title : {
+        text: 'Loss Function',
+    },
+    tooltip : {
+        trigger: 'axis'
+    },
+    legend: {
+        data:['ACC','BWT','TBWT','CBWT(1)']
+    },
+    toolbox: {
+        show : true,
+        feature : {
+            dataView : {show: true, readOnly: false},
+            magicType : {show: true, type: ['line', 'bar']},
+            restore : {show: true},
+            saveAsImage : {show: true}
+        }
+    },
+    calculable : true,
+    xAxis : [
+        {
+            type : 'category',
+            data : ['NLL','L1','L2','Hybird']
+        }
+    ],
+    yAxis : [
+        {
+            type : 'value'
+        }
+    ],
+    series : [
+        {
+            name:'ACC',
+            type:'bar',
+            data:[0.5578800038,0.6226799905,0.5635600030,0.5973499984,]
+        },
+        {
+            name:'BWT',
+            type:'bar',
+            data:[-0.4450666623,-0.2143222358,-0.4404999879,-0.3866111139,]
+        },
+        {
+            name:'TBWT',
+            type:'bar',
+            data:[-0.4313777735,-0.1987444560,-0.4266111122,-0.3806333376]
+        },
+        {
+            name:'CBWT(1)',
+            type:'bar',
+            data:[-0.6239555445,-0.4167999890,-0.5450333506,-0.5010888759]
+        }
+    ]
+};
+
