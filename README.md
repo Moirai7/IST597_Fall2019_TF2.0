@@ -10,3 +10,5 @@ tensorflow2.0
 第二，不能使用tf.trainable_variables。需要构建module或者keras.model，再用model取变量。
 第三，tf.save_model需要使用signature定义function，并且module不能再使用trainable_variables。可能keras可以使用未测试。但就目前设计，想继续训练很麻烦。
 第四，以前版本如conv2d，batchnorm在2.0上被删减，如果不使用keras，调用nn里的接口很复杂
+
+第五，原来multirnn，先选择rnncell，然后multirnn，在dynamic run返回的维度是3D（可能中间cell输入还是2D）。现在rnncell输入是2D，stack后输入还是2D，如果3D的话就维度错误。但是不用rnncell，选择rnn就可以输入3D.不要用stackrnn，直接用cell+rnn
