@@ -279,7 +279,7 @@ X_train, X_test, y_train, y_test = train_test_split(data, label, test_size=0.3)
 
 buffer_size = 10000
 batch_size = 1000
-n_epochs = 3
+n_epochs = 50
 learning_rate = 0.001
 train_dataset = tf.data.Dataset.from_tensor_slices((X_train, y_train))
 test_dataset = tf.data.Dataset.from_tensor_slices((X_test, y_test))
